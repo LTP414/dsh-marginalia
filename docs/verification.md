@@ -13,11 +13,14 @@ npm run build       # esbuild host + client, tsc declarations
 Results on 2026-10-28 (DSH 0.2.1-rc.2, Node 24.22.1):
 
 - `tsc --noEmit`: clean.
-- Vitest: **8 files, 45 tests passed**.
+- Vitest: **10 files, 50 tests passed**, including an insecure-origin client apply test.
 - Build: `lib/index.js` (self-contained Host ESM), `lib/client.js` (browser CommonJS module),
   `lib/types/**` declarations.
-- Client bundle smoke load with a `__ModuleLoader__` stub and DOM shim: exports
-  `{ apply, inject, name }`.
+- `npm run smoke`: built Host import and built Client module-loader load pass; exports
+  `{ apply, inject, name }` are present.
+- Built Client `apply()` + `/btw` claim on a simulated plain-HTTP origin where
+  `crypto.randomUUID` is undefined: succeeds, reaches `btw-ask`, and does not
+  resurrect a UUID error.
 - Bundle installation in the `web` profile: `application: applied`.
 - Live Client slot inspection after installation:
   - `conversation.input.overlay` → `dsh-marginalia-bubbles`
@@ -32,6 +35,8 @@ Results on 2026-10-28 (DSH 0.2.1-rc.2, Node 24.22.1):
 | Guard | `tests/tool-guard.test.ts` | owned-only deny, child-scope attach once, release, failure containment |
 | Storage | `tests/store.test.ts` | parent isolation, ordering, per-key serialization, crash repair, memory fallback, delete |
 | Engine | `tests/engine.test.ts` | early accept, prompt contents, follow-up replay, busy refusal, cancel with partial, timeout, archive hook, unload interruption |
+| Random IDs | `tests/random.test.ts` | `randomUUID` path, `getRandomValues` path, throwing `randomUUID`, no-crypto fallback, v4 shape/uniqueness |
+| Client apply | `tests/client-apply.test.ts` | real `apply()` wiring on insecure origin; `/btw` claim reaches the Host bridge |
 | Client store | `tests/client-store.test.ts` | streaming, canonical finalize, host rejection, local busy, history open/select/delete, dismiss-before-accept, subagent refusal |
 | Trigger | `tests/trigger.test.ts` | candidate visibility, claim on space/enter, argument routing, attachment refusal, subagent refusal |
 | Commands/wiring | `tests/commands.test.ts`, `tests/host-wiring.test.ts` | hidden list patch + restore, JSON results, error containment, real `apply()` assembly with fake Host services |
@@ -40,7 +45,7 @@ Results on 2026-10-28 (DSH 0.2.1-rc.2, Node 24.22.1):
 
 These require a live browser session and a real model, which this environment does not provide:
 
-1. Typing `/btw` in the actual composer and seeing the menu row.
+1. Typing `/btw` in the actual composer on the plain-HTTP Web GUI and seeing the menu row.
 2. Streaming a real fork answer into the bubble.
 3. Clicking stop and confirming the partial answer appears in history.
 4. Reloading the page and reopening history.

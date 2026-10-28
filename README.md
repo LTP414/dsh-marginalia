@@ -25,6 +25,7 @@ This is a DSH Host + Web Client bundle that implements the practical form of tha
 
 - DSH `>= 0.2.1-rc.1 < 0.3.0-0` (tested against `0.2.1-rc.2`)
 - Node `>= 22`
+- Works on a plain-HTTP LAN Web GUI: `crypto.randomUUID` is restricted to secure contexts, so the plugin uses `getRandomValues` (or a non-cryptographic identifier fallback) when needed.
 - A composed `fork` subagent provider and `storage-domain` for durable history
   (both are part of the standard Web profile; the plugin falls back to process memory if the
   storage domain is absent)
@@ -35,7 +36,7 @@ From this checkout:
 
 ```bash
 npm install
-npm run check          # typecheck + 45 unit tests + build
+npm run check          # typecheck + 50 unit tests + build + smoke
 ```
 
 Then install the workspace directory as a bundle through the Harness plugin manager, or add it to

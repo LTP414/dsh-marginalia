@@ -14,4 +14,8 @@ First usable release.
   follow-up, cancel with partial preservation, copy/collapse/close.
 - Client: topic history at `shell.overlay` with list/detail, retry, delete, copy, follow-up, and a
   composer toolbar entry point.
-- Tooling: TypeScript typecheck, 45 Vitest tests, self-contained esbuild bundles, CI workflow.
+- Tooling: TypeScript typecheck, 50 Vitest tests, built-artifact smoke, self-contained esbuild bundles, CI workflow.
+
+### Fixed in the same release
+
+- Plain-HTTP Web GUI origins no longer fail with `globalThis.crypto.randomUUID is not a function`; IDs use `getRandomValues` when `randomUUID` is unavailable (secure-context restriction).

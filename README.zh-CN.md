@@ -17,13 +17,14 @@
 
 - DSH `>= 0.2.1-rc.1 < 0.3.0-0`（在 `0.2.1-rc.2` 上验证）
 - Node `>= 22`
+- 支持纯 HTTP 的局域网 Web GUI：`crypto.randomUUID` 仅限安全上下文，插件会在不可用时退回 `getRandomValues`（最后再退回非加密标识符兜底）。
 - 标准 Web profile 自带的 `fork` 子代理 provider 与 `storage-domain`；后者缺失时自动退化为进程内存，不会静默写全局 JSON。
 
 ## 安装与构建
 
 ```bash
 npm install
-npm run check          # 类型检查 + 45 个单测 + 构建
+npm run check          # 类型检查 + 50 个单测 + 构建 + 冒烟
 ```
 
 然后用 Harness 的插件管理器安装当前目录，或在 bundle composition 中加入：
