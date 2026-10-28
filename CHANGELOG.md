@@ -4,6 +4,13 @@
 
 First usable release.
 
+### Fixed in 0.1.1
+
+- Plain-HTTP Web GUI origins no longer fail with `globalThis.crypto.randomUUID is not a function`; IDs use `getRandomValues` when `randomUUID` is unavailable (secure-context restriction).
+- Added a built-artifact smoke test and an insecure-origin client apply test.
+
+### 0.1.0
+
 - Host: fork-based read-only side-question engine with a reserved child id, monotonic tool guard,
   one active job per parent, timeout, cancellation, and cleanup.
 - Host: durable topics in the `marginalia` storage domain; crash-left `running` turns become
@@ -16,6 +23,3 @@ First usable release.
   composer toolbar entry point.
 - Tooling: TypeScript typecheck, 50 Vitest tests, built-artifact smoke, self-contained esbuild bundles, CI workflow.
 
-### Fixed in the same release
-
-- Plain-HTTP Web GUI origins no longer fail with `globalThis.crypto.randomUUID is not a function`; IDs use `getRandomValues` when `randomUUID` is unavailable (secure-context restriction).
