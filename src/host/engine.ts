@@ -27,6 +27,7 @@ import {
   type BtwTopicSummary,
   type BtwTurn,
 } from '../shared'
+import { randomId } from '../random'
 import { openToolNames, type StreamCapture } from './parent-context'
 import type { ChildGuard } from './tool-guard'
 import type { BtwStore } from './store'
@@ -127,7 +128,7 @@ export class BtwEngine {
 
   constructor(private readonly options: BtwEngineOptions) {
     this.now = options.now ?? Date.now
-    this.uuid = options.uuid ?? (() => globalThis.crypto.randomUUID())
+    this.uuid = options.uuid ?? randomId
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS
     this.cleanupTimeoutMs = options.cleanupTimeoutMs ?? CLEANUP_TIMEOUT_MS
     this.log = options.log ?? (() => {})

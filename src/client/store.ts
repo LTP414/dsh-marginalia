@@ -22,6 +22,7 @@ import {
   type GetResult,
   type ListResult,
 } from '../shared'
+import { randomId } from '../random'
 import type { TranslateFn } from './locales'
 
 export type BubbleStatus = BtwStatus | 'starting'
@@ -163,7 +164,7 @@ export class MarginaliaStore {
 
   constructor(private readonly options: StoreOptions) {
     this.now = options.now ?? Date.now
-    this.uuid = options.uuid ?? (() => globalThis.crypto.randomUUID())
+    this.uuid = options.uuid ?? randomId
     this.source = options.source ?? 'dsh-marginalia'
     this.maxBubbles = options.maxBubblesPerSession ?? 6
     this.log = options.log ?? (() => {})
