@@ -19,5 +19,5 @@ export const MAX_PROMPT_BYTES = 1024 * 1024
 export const DEFAULT_TIMEOUT_MS = 10 * 60 * 1_000
 /** Cleanup must not hang the host teardown path. */
 export const CLEANUP_TIMEOUT_MS = 5_000
-/** Follow-up sharing a topic keeps the transport generation only while it is healthy. */
+/** Side answers do not need the parent turn's full completion budget. */
 export const MAX_SIDE_OUTPUT_TOKENS = 32_000

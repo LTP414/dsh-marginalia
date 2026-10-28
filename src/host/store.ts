@@ -7,6 +7,7 @@
  * so in the log; it never silently writes a global JSON file.
  */
 import { z } from 'zod'
+import type { DomainSpec } from '@deepseek-ai/dsh-storage-domain'
 import type { BtwStatus, BtwTopic, BtwTopicSummary } from '../shared'
 import { summarizeTopic } from '../shared'
 
@@ -39,7 +40,7 @@ export const marginaliaDomainSpec = {
   tables: {
     topics: { valueSchema: topicSchema },
   },
-} as const
+} as unknown as DomainSpec
 
 interface TableLike {
   get(key: string): BtwTopic | undefined
@@ -103,16 +104,21 @@ export class BtwStore {
       warn('dsh-marginalia: storageDomain is unavailable; side-question history is process-memory only.')
       return BtwStore.memory(options, warn)
     }
+    let domain: DomainLike
     try {
-      const domain = await facility.open(marginaliaDomainSpec)
-      const store = new BtwStore(domain, 'storage', { ...options, onWarning: warn })
-      const repaired = await store.markInterrupted()
-      if (repaired > 0) ctx.logger?.warn(`dsh-marginalia: marked ${repaired} interrupted side-question topic(s) after restart.`)
-      return store
+      domain = await facility.open(marginaliaDomainSpec)
     } catch (error) {
       warn('dsh-marginalia: could not open the side-question domain; falling back to process memory.', error)
       return BtwStore.memory(options, warn)
     }
+    const store = new BtwStore(domain, 'storage', { ...options, onWarning: warn })
+    try {
+      const repaired = await store.markInterrupted()
+      if (repaired > 0) ctx.logger?.warn(`dsh-marginalia: marked ${repaired} interrupted side-question topic(s) after restart.`)
+    } catch (error) {
+      warn('dsh-marginalia: could not repair interrupted side-question topics.', error)
+    }
+    return store
   }
 
   private static memory(options: StoreOptions, warn: (message: string, error?: unknown) => void): BtwStore {

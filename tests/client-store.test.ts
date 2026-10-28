@@ -198,6 +198,21 @@ describe('MarginaliaStore', () => {
     await h.store.dispose()
   })
 
+  it('does not resurrect a bubble cancelled before the Host accepts it', async () => {
+    let resolveAsk!: (value: unknown) => void
+    const h = makeHarness({ ask: () => new Promise(resolve => { resolveAsk = resolve }) })
+    const id = h.store.ask('parent-1', 'Stop early?')
+    await h.store.cancel(id)
+    expect(h.store.getSnapshot().bubbles[0]?.status).toBe('cancelled')
+    resolveAsk({
+      topic: { id: TOPIC_A, parentSessionId: 'parent-1', title: 'Stop early?', createdAt: 1, updatedAt: 1, turns: [] },
+      turn: { id, question: 'Stop early?', answer: '', status: 'running', createdAt: 1, updatedAt: 1, childSessionId: id },
+    })
+    await waitFor(() => h.calls.filter(call => call.name === CANCEL_COMMAND).length >= 2)
+    expect(h.store.getSnapshot().bubbles[0]?.status).toBe('cancelled')
+    await h.store.dispose()
+  })
+
   it('reports a subagent view as unavailable', () => {
     const h = makeHarness()
     h.sessionState.subagent = { address: 'child' }

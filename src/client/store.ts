@@ -151,6 +151,7 @@ export class MarginaliaStore {
   private snapshot: MarginaliaSnapshot = { bubbles: [], history: null }
   private readonly listeners = new Set<() => void>()
   private readonly watchers = new Map<string, Watcher>()
+  private readonly cancelled = new Set<string>()
   private readonly pending = new Map<string, AbortController>()
   private readonly historyControllers = new Set<AbortController>()
   private readonly now: () => number
@@ -246,6 +247,7 @@ export class MarginaliaStore {
   async cancel(bubbleId: string): Promise<void> {
     const bubble = this.findBubble(bubbleId)
     if (!bubble) return
+    this.cancelled.add(bubbleId)
     this.pending.get(bubbleId)?.abort()
     this.pending.delete(bubbleId)
     this.releaseWatcher(bubbleId)
@@ -272,6 +274,7 @@ export class MarginaliaStore {
   dismiss(bubbleId: string): void {
     const bubble = this.findBubble(bubbleId)
     if (!bubble) return
+    this.cancelled.add(bubbleId)
     if (bubble.status === 'starting' || bubble.status === 'running') void this.cancel(bubbleId)
     this.pending.delete(bubbleId)
     this.releaseWatcher(bubbleId)
@@ -320,6 +323,9 @@ export class MarginaliaStore {
   async deleteTopic(topicId: string): Promise<void> {
     const history = this.snapshot.history
     if (!history) return
+    for (const bubble of this.snapshot.bubbles.filter(item => item.topicId === topicId)) {
+      this.releaseWatcher(bubble.id)
+    }
     try {
       await this.options.bridge.call(history.sessionId, DELETE_COMMAND, { topicId })
     } catch (error) {
@@ -381,8 +387,9 @@ export class MarginaliaStore {
       if (!accepted || typeof accepted !== 'object' || !accepted.turn || !accepted.topic) {
         throw new Error(this.options.t('error.backend'))
       }
-      // The user may have closed the bubble while the Host was accepting it.
-      if (!this.findBubble(bubble.id)) {
+      // The user may have closed or stopped the bubble while the Host was
+      // accepting it. Do not resurrect it as running.
+      if (this.cancelled.has(bubble.id) || !this.findBubble(bubble.id)) {
         void this.options.bridge.call(bubble.sessionId, CANCEL_COMMAND, {
           topicId: accepted.topic.id,
           turnId: bubble.id,
@@ -402,7 +409,7 @@ export class MarginaliaStore {
       this.watch(bubble.id, accepted.topic.id, accepted.turn.childSessionId ?? bubble.id)
     } catch (error) {
       this.pending.delete(bubble.id)
-      if (controller.signal.aborted) return
+      if (controller.signal.aborted || this.cancelled.has(bubble.id)) return
       if (!this.findBubble(bubble.id)) return
       this.update(bubble.id, {
         status: 'error',
@@ -417,7 +424,7 @@ export class MarginaliaStore {
     this.watchers.set(bubbleId, watcher)
     const sessions = this.options.sessions
     if (!sessions) {
-      this.markNotAttached(bubbleId)
+      void this.recoverWithoutChild(bubbleId, topicId)
       return
     }
     void (async () => {
@@ -435,7 +442,7 @@ export class MarginaliaStore {
         }
       }
       if (!reference) {
-        this.markNotAttached(bubbleId)
+        void this.recoverWithoutChild(bubbleId, topicId)
         return
       }
       if (watcher.released || !this.findBubble(bubbleId)) {
@@ -532,14 +539,42 @@ export class MarginaliaStore {
     }
   }
 
-  private markNotAttached(bubbleId: string): void {
+  /**
+   * Retaining the child can fail when the Client has not seen its catalog row
+   * yet. The Host still owns the result, so read it back a few times before
+   * declaring the bubble detached.
+   */
+  private async recoverWithoutChild(bubbleId: string, topicId: string): Promise<void> {
     const bubble = this.findBubble(bubbleId)
     if (!bubble) return
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      try {
+        const raw = await this.options.bridge.call(bubble.sessionId, GET_COMMAND, { topicId }) as GetResult
+        const turn = raw?.topic?.turns.find(item => item.id === bubbleId)
+        if (raw?.topic) this.mergeTopic(raw.topic)
+        if (turn && turn.status !== 'running') {
+          this.update(bubbleId, {
+            status: turn.status,
+            answer: turn.answer,
+            ...(turn.error === undefined ? { error: undefined } : { error: turn.error }),
+            streaming: false,
+          })
+          this.releaseWatcher(bubbleId)
+          return
+        }
+      } catch {
+        // Keep trying until the bounded budget is spent.
+      }
+      if (attempt < 4) await delay(700)
+    }
+    const current = this.findBubble(bubbleId)
+    if (!current) return
     this.update(bubbleId, {
-      status: bubble.answer ? 'complete' : 'error',
-      error: bubble.answer ? undefined : this.options.t('error.notAttached'),
+      status: current.answer ? 'complete' : 'error',
+      error: current.answer ? undefined : this.options.t('error.notAttached'),
       streaming: false,
     })
+    this.releaseWatcher(bubbleId)
   }
 
   private readChat(reference: SessionReferenceLike): { text: string; error?: string } {

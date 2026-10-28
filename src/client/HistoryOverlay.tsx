@@ -185,6 +185,9 @@ function HistoryBody({ store, history, t }: { readonly store: MarginaliaStore; r
           {askError && <p className="mgl-error" role="alert">{askError}</p>}
 
           <div className="mgl-topic-list" role="listbox" aria-label={t('history.title')}>
+            {history.loading && (
+              <div className="mgl-detail-loading"><span className="mgl-spinner" aria-hidden="true" />{t('history.loading')}</div>
+            )}
             {history.topics.length === 0 && !history.loading && (
               <div className="mgl-empty">
                 <HistoryIcon size={22} />

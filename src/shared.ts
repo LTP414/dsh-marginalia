@@ -263,7 +263,8 @@ export function formatHistory(history: readonly BtwTurn[]): string {
     else if (turn.status === 'error') lines.push(textBlock('Assistant', `[answer failed${turn.error ? `: ${turn.error}` : ''}]`))
     else if (turn.status === 'interrupted') lines.push(textBlock('Assistant', '[answer interrupted]'))
     else lines.push(textBlock('Assistant', '[no answer]'))
-    const block = lines.join('\n')
+    const joined = lines.join('\n')
+    const block = joined.length > MAX_HISTORY_CHARS ? `${joined.slice(0, MAX_HISTORY_CHARS)}…` : joined
     if (total + block.length + 2 > MAX_HISTORY_CHARS && blocks.length > 0) {
       omitted = index + 1
       break
@@ -316,8 +317,11 @@ export function buildPrompt(input: OpenPromptInput): string {
     parts.push('</parent-in-progress>')
   }
   if (reference) {
-    const fence = fenceFor(reference)
-    parts.push('', '<quoted-context>', fence, reference, fence, '</quoted-context>')
+    const longest = Math.max(0, ...(reference.match(/`+/g) ?? []).map(run => run.length))
+    // A fence can only contain a shorter backtick run. For pathological quotes,
+    // keep the tag and omit the fence rather than emitting a misleading one.
+    const fence = longest < 64 ? fenceFor(reference) : ''
+    parts.push('', '<quoted-context>', ...(fence ? [fence, reference, fence] : [reference]), '</quoted-context>')
   }
   parts.push('', 'Question:', input.question, '</btw>')
 
@@ -351,6 +355,9 @@ export function sanitizeError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error)
   const singleLine = message
     .replace(/[\u0000-\u001F\u007F]/g, ' ')
+    .replace(/\bsk-[A-Za-z0-9_-]{8,}\b/g, 'sk-***')
+    .replace(/\/home\/[^\s"'`]+/g, '<path>')
+    .replace(/[A-Za-z]:\\[^\s"'`]+/g, '<path>')
     .replace(/\s+/g, ' ')
     .trim()
   return singleLine.length <= MAX_ERROR_CHARS ? singleLine : `${singleLine.slice(0, MAX_ERROR_CHARS - 1)}…`

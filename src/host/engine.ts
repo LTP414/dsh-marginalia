@@ -35,7 +35,10 @@ export interface ParentAgent {
   readonly id: string
   readonly status: 'idle' | 'running'
   readonly options?: { readonly maxTokens?: number }
-  readonly session?: { snapshotEvents?(): readonly { readonly type: string; readonly data?: unknown }[] }
+  readonly session?: {
+    readonly header?: { readonly origin?: string }
+    snapshotEvents?(): readonly { readonly type: string; readonly data?: unknown }[]
+  }
 }
 
 export interface ChildOutputBlock {
@@ -89,9 +92,11 @@ interface ActiveJob {
   readonly childId: string
   readonly controller: AbortController
   cancelReason?: CancelReason
+  starting?: Promise<ChildHandle>
   handle?: ChildHandle
   disposed?: boolean
-  done?: Promise<void>
+  readonly done: Promise<void>
+  finish(): void
   timer?: ReturnType<typeof setTimeout>
 }
 
@@ -135,6 +140,9 @@ export class BtwEngine {
   async ask(input: AskInput): Promise<AskAccepted> {
     if (this.closed) throw new Error('The side-question engine is stopping.')
     if (!input.turnId) throw new Error('Missing turn id.')
+    if (input.parent.session?.header?.origin === 'subagent') {
+      throw new Error('Side questions are only available in the main session.')
+    }
     if (this.active.has(input.parent.id)) throw new BtwBusyError()
     if (this.active.size >= MAX_ACTIVE_BTW) throw new BtwCapacityError()
     if (this.options.guard.has(input.turnId)) throw new Error('Duplicate side-question id.')
@@ -184,12 +192,16 @@ export class BtwEngine {
     await this.options.store.put(topic)
 
     const controller = new AbortController()
+    let finishJob!: () => void
+    const done = new Promise<void>((resolve) => { finishJob = resolve })
     const job: ActiveJob = {
       parentId: input.parent.id,
       topicId: topic.id,
       turnId: turn.id,
       childId: turn.id,
       controller,
+      done,
+      finish: finishJob,
       timer: setTimeout(() => {
         if (job.cancelReason !== undefined) return
         job.cancelReason = 'timeout'
@@ -215,7 +227,7 @@ export class BtwEngine {
       const maxTokens = typeof parentMax === 'number' && parentMax > 0
         ? Math.min(MAX_SIDE_OUTPUT_TOKENS, parentMax)
         : MAX_SIDE_OUTPUT_TOKENS
-      const handle = await this.options.startChild({
+      const starting = this.options.startChild({
         parent: input.parent,
         childId: job.childId,
         prompt,
@@ -223,12 +235,20 @@ export class BtwEngine {
         maxTokens,
         label: 'Marginalia',
       })
+      job.starting = starting
+      const handle = await starting
+      job.starting = undefined
       job.handle = handle
-      job.done = this.settle(job, topic, turn, handle)
+      void this.settle(job, topic, turn, handle).catch((error) => {
+        this.log('dsh-marginalia: settle failed.', error)
+        if (this.active.get(job.parentId) === job) this.active.delete(job.parentId)
+        job.finish()
+      })
       return { topic, turn }
     } catch (error) {
       if (job.timer) clearTimeout(job.timer)
       this.active.delete(job.parentId)
+      job.finish()
       await releaseId()
       const cancelled = job.cancelReason === 'user' || job.cancelReason === 'dispose'
       const status: BtwStatus = cancelled ? 'cancelled' : 'error'
@@ -309,13 +329,14 @@ export class BtwEngine {
     }
     if (this.options.archiveChild) {
       try {
-        await this.options.archiveChild(job.childId)
+        await this.bounded(this.options.archiveChild(job.childId), 'archive')
       } catch (archiveError) {
         this.log('dsh-marginalia: child session could not be archived.', archiveError)
       }
     }
     this.options.capture.clear(job.childId)
     if (this.active.get(job.parentId) === job) this.active.delete(job.parentId)
+    job.finish()
   }
 
   list(parentSessionId: string, limit?: number): BtwTopicSummary[] {
@@ -339,15 +360,17 @@ export class BtwEngine {
     }
     job.cancelReason = 'user'
     job.controller.abort(new Error('Side question cancelled by the user.'))
+    if (job.starting) {
+      try { await this.bounded(job.starting.then(() => undefined, () => undefined), 'cancel') }
+      catch (error) { this.log('dsh-marginalia: cancel startup wait failed.', error) }
+    }
     if (job.handle && !job.disposed) {
       job.disposed = true
       try { await this.bounded(job.handle.dispose(), 'dispose') }
       catch (error) { this.log('dsh-marginalia: cancel cleanup failed.', error) }
     }
-    if (job.done) {
-      try { await this.bounded(job.done, 'cancel') }
-      catch (error) { this.log('dsh-marginalia: cancel settlement failed.', error) }
-    }
+    try { await this.bounded(job.done, 'cancel') }
+    catch (error) { this.log('dsh-marginalia: cancel settlement failed.', error) }
   }
 
   async delete(parentSessionId: string, topicId: string): Promise<boolean> {
@@ -369,7 +392,13 @@ export class BtwEngine {
       job.cancelReason = 'dispose'
       job.controller.abort(new Error('The side-question plugin is stopping.'))
     }
-    await Promise.allSettled([...this.active.values()].map(job => this.bounded(job.done ?? Promise.resolve(), 'dispose')))
+    await Promise.allSettled([...this.active.values()].map(async job => {
+      if (job.starting) {
+        try { await this.bounded(job.starting.then(() => undefined, () => undefined), 'dispose') }
+        catch (error) { this.log('dsh-marginalia: startup cleanup failed.', error) }
+      }
+      await this.bounded(job.done, 'dispose')
+    }))
     await this.options.guard.releaseAll()
     try { await this.options.store.markInterrupted() }
     catch (error) { this.log('dsh-marginalia: could not mark interrupted topics.', error) }
