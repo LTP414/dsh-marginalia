@@ -1,0 +1,19 @@
+<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mgl-page" x1="8" y1="5" x2="26" y2="31" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7C3AED"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="mgl-spark" x1="26" y1="4" x2="33" y2="12" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FBBF24"/>
+      <stop offset="1" stop-color="#FB7185"/>
+    </linearGradient>
+  </defs>
+  <path d="M8 8.5C8 6.567 9.567 5 11.5 5H21L28 12V27.5C28 29.433 26.433 31 24.5 31H11.5C9.567 31 8 29.433 8 27.5V8.5Z" fill="url(#mgl-page)"/>
+  <path d="M21 5L28 12H23.5C22.119 12 21 10.881 21 9.5V5Z" fill="#C4B5FD" fill-opacity="0.85"/>
+  <rect x="12.5" y="15" width="9" height="1.7" rx="0.85" fill="#FFFFFF" fill-opacity="0.92"/>
+  <rect x="12.5" y="19" width="11" height="1.7" rx="0.85" fill="#FFFFFF" fill-opacity="0.72"/>
+  <rect x="12.5" y="23" width="7" height="1.7" rx="0.85" fill="#FFFFFF" fill-opacity="0.52"/>
+  <path d="M28.8 4.2L29.75 6.55L32.1 7.5L29.75 8.45L28.8 10.8L27.85 8.45L25.5 7.5L27.85 6.55L28.8 4.2Z" fill="url(#mgl-spark)"/>
+  <circle cx="31.4" cy="13.2" r="1.2" fill="#FBBF24"/>
+</svg>

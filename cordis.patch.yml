@@ -1,0 +1,4 @@
+# dsh-marginalia is a Host + Web Client bundle.
+- insert:
+    - id: dsh-marginalia
+      name: dsh-marginalia

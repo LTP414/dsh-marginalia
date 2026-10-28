@@ -1,0 +1,13 @@
+dsh-marginalia
+Copyright 2026 the dsh-marginalia contributors
+
+This product includes design research and selected implementation patterns
+derived from the following open-source projects:
+
+  MichengAI/dsh-btw            Apache-2.0
+  WLV-ZEDD/dsh-btw             MIT
+  kaieye/dsh-AIR               MIT
+  can1357/oh-my-pi             MIT
+
+The original code of this project is licensed under the Apache License,
+Version 2.0. See LICENSE and THIRD_PARTY_NOTICES.md for details.
