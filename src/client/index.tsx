@@ -111,8 +111,9 @@ export function apply(ctx: Context): void {
   ctx.effect(() => () => store.dispose())
 }
 
-function HistoryButton({ store, sessionId }: { readonly store: MarginaliaStore; readonly sessionId: string }): React.JSX.Element {
+function HistoryButton({ store, sessionId }: { readonly store: MarginaliaStore; readonly sessionId: string }): React.JSX.Element | null {
   const t = store.t
+  if (store.canAsk(sessionId)) return null
   return (
     <button
       type="button"
