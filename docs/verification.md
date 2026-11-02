@@ -5,17 +5,18 @@
 ```bash
 npm run check          # typecheck + 53 unit tests + build + built-artifact smoke
 npm run test:coverage  # the same unit suite with a coverage report
-npm run test:e2e       # 7 browser specs (8th real-provider spec is skipped by default)
+npm run test:e2e       # 16 browser tests (Chromium/Firefox × light/dark), 2 nightly skips
 ```
 
-Results on 2026-11-02 (DSH CLI `0.2.1-rc.2`, frontend `0.2.1-rc.5`, Node 24.22.1):
+Results on 2026-11-03 (DSH CLI `0.2.1-rc.2`, frontend `0.2.1-rc.5`, Node 24.22.1, Playwright Chromium + Firefox 157):
 
 - `tsc --noEmit`: clean.
 - Vitest: **10 files, 53 tests passed**.
 - Build: self-contained Host ESM, browser CommonJS module, declarations.
 - `npm run smoke`: built Host import, built Client module-loader load, built Client `apply()` on a
   simulated plain-HTTP origin without `crypto.randomUUID`.
-- Playwright: **7 passed, 1 skipped** against an isolated Host bound to `10.10.0.2` (plain HTTP).
+- Playwright: **16 passed, 2 skipped** against isolated Hosts bound to `10.10.0.2` (plain HTTP):
+  Chromium/Firefox × light/dark; the two skips are the gated real-provider spec in the light projects.
 - `npm run test:coverage`: 67.6% statements, 67.9% branches, 75.3% functions, 67.6% lines.
   The browser-rendered components (`Bubble.tsx`, `HistoryOverlay.tsx`, `Markdown.tsx`) are near 0%
   in Node coverage because they need a DOM; the Playwright suite covers them end to end.
@@ -31,13 +32,14 @@ workspace, and storage; auth uses the real launch-token exchange.
 
 | Spec | Result |
 | --- | --- |
-| `/btw` appears in the real slash menu, claim, token growth, no inherited parent text, main Chat node count unchanged, child archived in workspace storage | pass |
+| `/btw` appears in the real slash menu, claim, token growth, no inherited parent text, main Chat node count unchanged, child archived in workspace storage (Chromium + Firefox) | pass |
 | Stop keeps the partial answer; history row is Cancelled | pass |
 | Follow-up creates a second turn in the same topic | pass |
 | Reload restores the same session and history, recreates no bubble, resends nothing | pass |
 | Forced `bash` tool call is denied, target file untouched, transcript unchanged | pass |
 | Insert answer into composer without sending | pass |
-| Plain-HTTP origin with `crypto.randomUUID === undefined` still asks successfully | pass |
+| Plain-HTTP origin with `crypto.randomUUID === undefined` still asks successfully (Chromium + Firefox) | pass |
+| Dark DSH theme: send labels visible, panel opaque, turns scroll, follow-up pinned (Chromium + Firefox) | pass |
 | Real provider acceptance | skipped unless `DSH_E2E_REAL=1` + `DEEPSEEK_API_KEY` |
 
 ## Unit and wiring coverage

@@ -121,6 +121,8 @@
 - Markdown：GFM、`skipHtml`、`disallowedElements={['img']}`、`img: ()=>null`、`a` 加 `target=_blank rel=noreferrer noopener`。
 - Icons：只使用内联 SVG，避免额外依赖；`MarginaliaIcon`、Copy/Check/Close/Stop/Chevron/History/Trash/Refresh/Send/Plus。
 - styles：全部 `.mgl-*`；主题 token `--dsw-alias-*`；`.mgl-layer` 浮在 composer 上方；历史面板 fixed backdrop；窄屏 760px 以下全屏。
+  - `.mgl-send` 必须用 `button-info-fill` + `label-primary-foreground`，不要在深色模式退回白字白底；`:disabled` 保持 `opacity:1` 且 `min-width:max-content`。
+  - 历史右栏：`.mgl-detail` 不整体滚动；`.mgl-turns` 是唯一滚动区；`.mgl-history-follow` 固定在底部，不能与后续轮次重叠。
 - locales：`NS = 'dsh-marginalia'`，`en`/`zh` 平铺 key，`interpolate` 支持 `{count}`；`fallbackTranslate` 在 locale 未就绪时使用。
 
 ## 修改指南

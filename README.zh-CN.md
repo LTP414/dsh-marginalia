@@ -19,14 +19,14 @@
 - Node `>= 22`
 - 支持纯 HTTP 的局域网 Web GUI：`crypto.randomUUID` 仅限安全上下文，插件会在不可用时退回 `getRandomValues`（最后再退回非加密标识符兜底）。
 - 标准 Web profile 自带的 `fork` 子代理 provider 与 `storage-domain`；后者缺失时自动退化为进程内存，不会静默写全局 JSON。
-- 浏览器端到端测试需要 `dsh` 在 `PATH`（或设置 `DSH_BIN`）、`pnpm` 与 Playwright Chromium。
+- 浏览器端到端测试需要 `dsh` 在 `PATH`（或设置 `DSH_BIN`）、`pnpm` 与 Playwright Chromium + Firefox。
 
 ## 安装与构建
 
 ```bash
 npm install
 npm run check          # 类型检查 + 53 个单测 + 构建 + 冒烟
-npm run test:e2e       # 7 个真实浏览器 spec（隔离 Host + fake LLM）
+npm run test:e2e       # Chromium + Firefox + 深色项目；16 passed，2 个 nightly skip
 ```
 
 然后用 Harness 的插件管理器安装当前目录，或在 bundle composition 中加入：
@@ -88,6 +88,10 @@ npm run test:e2e       # 7 个真实浏览器 spec（隔离 Host + fake LLM）
 - 子代理视图直接拒绝旁问；这是主会话功能。
 - 子会话继承父会话的 sandbox/permission；guard 只移除工具执行，不扩大权限。
 
+## 浏览器支持
+
+Web UI 在 Chromium 与 Firefox 中都有真实浏览器覆盖。深色历史回归专门锁定发送按钮对比度与“追问框固定、对话独立滚动”的布局；`Firefox + DSH 深色` 正是最初的故障组合。
+
 ## 诚实的限制
 
 - **不是真 ephemeral**：本地 fork 会产生 durable 子会话；Workspace registry 可用时完成后尽力 archive，但 Host 无法真正“忘记”它。历史本身在 sidecar domain。
@@ -102,9 +106,9 @@ npm run test:e2e       # 7 个真实浏览器 spec（隔离 Host + fake LLM）
 
 ## 端到端验证
 
-浏览器套件为每个 worker 启动**独立** `DSH_HOME` 与自定义 profile，通过真实 launch-token 换取 cookie，预置 workspace，并用可控 fake LLM 逐 token 输出、abort、强制工具调用。默认绑定非 loopback HTTP 地址，因此真正覆盖非安全上下文的 UUID 路径。
+浏览器套件为每个 worker 启动**独立** `DSH_HOME` 与自定义 profile，通过真实 launch-token 换取 cookie，预置 workspace，并用可控 fake LLM 逐 token 输出、abort、强制工具调用。默认绑定非 loopback HTTP 地址，因此真正覆盖非安全上下文的 UUID 路径。Chromium 与 Firefox 都跑核心 7 条 spec；两者还会用真实 `ui-theme` 设置跑深色历史回归。
 
-覆盖：slash 菜单 claim、逐 token 增长、Stop 保留 partial + 历史 Cancelled、同主题追问、刷新恢复、只读工具拒绝且文件未变、插入输入框、`crypto.randomUUID === undefined` 的纯 HTTP 场景。
+覆盖：slash 菜单 claim、逐 token 增长、Stop 保留 partial + 历史 Cancelled、同主题追问、刷新恢复、只读工具拒绝且文件未变、插入输入框、`crypto.randomUUID === undefined` 的纯 HTTP 场景，以及深色模式下历史按钮对比度/固定追问框布局。
 
 详见 [`docs/e2e.md`](docs/e2e.md)。真实模型验收不在确定性套件里：
 

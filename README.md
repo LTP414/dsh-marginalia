@@ -29,7 +29,7 @@ This is a DSH Host + Web Client bundle that implements the practical form of tha
 - A composed `fork` subagent provider and `storage-domain` for durable history
   (both are part of the standard Web profile; the plugin falls back to process memory if the
   storage domain is absent)
-- For the browser suite: `dsh` on `PATH` (or `DSH_BIN`), `pnpm`, and Chromium for Playwright
+- For the browser suite: `dsh` on `PATH` (or `DSH_BIN`), `pnpm`, and Playwright Chromium + Firefox
 
 ## Install
 
@@ -38,7 +38,7 @@ From this checkout:
 ```bash
 npm install
 npm run check          # typecheck + 53 unit tests + build + smoke
-npm run test:e2e       # 7 real-browser specs against an isolated Host + fake LLM
+npm run test:e2e       # 16 browser tests across Chromium/Firefox + dark projects
 ```
 
 Then install the workspace directory as a bundle through the Harness plugin manager, or add it to
@@ -117,6 +117,12 @@ back to visible command lifecycle events.
 - Child sessions inherit the parent's sandbox/permission model; the guard only removes tool
   execution, it does not widen permissions.
 
+## Browser support
+
+The Web UI is exercised in Chromium and Firefox. The dark-theme history regression pins the send
+label contrast and the scroll/pinned-follow-up layout; `Firefox + DSH dark` was the original failure
+combination.
+
 ## Honest limitations
 
 - **Not truly ephemeral.** A local fork creates a durable child session. Marginalia archives it
@@ -145,11 +151,12 @@ back to visible command lifecycle events.
 The browser suite starts a **separate** `DSH_HOME` and custom profile per worker, authenticates
 through the real launch-token exchange, seeds a workspace, and runs a deterministic fake LLM that
 streams tokens, aborts, and forces a tool call. It binds a non-loopback HTTP address by default so
-the insecure-context UUID path is exercised for real.
+the insecure-context UUID path is exercised for real. Chromium and Firefox run the core seven
+specs; both browsers also run a dark-theme history regression against the real `ui-theme` setting.
 
 Covered specs: slash menu claim, token-level growth, Stop with partial history, follow-up topic,
-reload persistence, read-only tool denial with an untouched file, insert-to-composer, and a
-plain-HTTP origin with `crypto.randomUUID === undefined`.
+reload persistence, read-only tool denial with an untouched file, insert-to-composer, a plain-HTTP
+origin with `crypto.randomUUID === undefined`, and dark-theme history button/layout behavior.
 
 See [`docs/e2e.md`](docs/e2e.md). Real-preset acceptance stays out of the deterministic suite:
 

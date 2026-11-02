@@ -151,6 +151,12 @@ There is no global JSON file.
 
 The Host remains the durability authority. Client state is recoverable by reopening history.
 
+The history detail is a three-row flex column: fixed head, scrollable `.mgl-turns`, fixed
+follow-up composer. Do not make `.mgl-detail` the scroll container; that was the dark-theme bug
+where later turns painted under the follow-up input. The send buttons use
+`button-info-fill` with `label-primary-foreground`, never `brand-primary` + white: in the DSH dark
+palette `brand-primary` is near-white and produced an invisible label.
+
 ## Browser verification
 
 The suite in [`e2e/`](../e2e) launches a real isolated Host, authenticates through the launch

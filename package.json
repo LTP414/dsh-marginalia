@@ -1,6 +1,6 @@
 {
   "name": "dsh-marginalia",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Read-only side questions for DeepSeek Harness — ask in the margin, keep the main thread clean.",
   "keywords": [
     "dsh",

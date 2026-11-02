@@ -5,6 +5,7 @@
 导出 `test`、`expect` 和 `MarginaliaFixtures`。
 
 - `host` 是 **worker-scoped** fixture：每个 Playwright worker 只启动一次 Host，所有 test 复用它但各自使用新 browser context/空白 session。
+- 主题由 `workerInfo.project.name` 是否包含 `dark` 决定；dark 项目通过真实 `ui-theme.preference=dark` 启动 Host，不用 `colorScheme` 模拟。
 - `timeout: 180_000`：启动包含 profile 初始化 + 两次 `dsh plugin add` + Host 启动。
 - `finally { await host.stop() }`：即使测试失败也停止 Host；run 目录保留供诊断。
 - 日志只打印脱敏后的 `host tokenUrl`（`token=***`）和 `home` 路径。

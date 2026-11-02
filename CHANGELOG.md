@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.1 — 2026-11-03
+
+- Fix DSH dark-theme history panel: the send labels were white on a near-white
+  `brand-primary` fill (Firefox dark mode made this most visible). They now use
+  the theme's `label-primary-foreground` against `button-info-fill`, keep
+  `opacity: 1` when disabled, and reserve their intrinsic width.
+- The follow-up composer is now pinned to the bottom of the right pane while the
+  turn transcript scrolls independently, instead of being overlapped by later
+  turns.
+- Add Firefox and dark-theme Playwright projects. The dark regression spec
+  asserts button visibility/contrast, an opaque panel, a scrolling turn list,
+  and a follow-up form that stays below it.
+- CI installs Firefox alongside Chromium; 16 browser tests pass (2 nightly
+  real-provider cases skipped).
+
 ## 0.2.0 — 2026-11-02
 
 - Real-browser end-to-end suite: isolated `DSH_HOME`/profile per worker, real launch-token auth,

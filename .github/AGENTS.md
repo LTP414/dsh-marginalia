@@ -9,7 +9,7 @@
 ## 关联命令
 
 - `ci.yml` 执行 `npm ci` + `npm run check`，矩阵 Node 22/24。
-- `e2e.yml` 安装 `pnpm@11` 和 `@deepseek-ai/dsh@0.2.1-rc.2`，安装 Chromium，执行 `npm run test:e2e`，失败上传 `.e2e-runs/artifacts` 与 `host.log`。
+- `e2e.yml` 安装 `pnpm@11` 和 `@deepseek-ai/dsh@0.2.1-rc.2`，安装 Chromium + Firefox，执行 `npm run test:e2e`，失败上传 `.e2e-runs/artifacts` 与 `host.log`。
 
 ## 修改规则
 

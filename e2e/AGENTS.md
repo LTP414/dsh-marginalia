@@ -10,7 +10,8 @@ e2e/
   support/ui.ts       页面打开、composer、/btw、bubble、history 等 helper
   fixtures/dsh.ts     worker-scoped Playwright fixture
   fixtures/fake-llm/  确定性 LLM bundle（独立 package）
-  specs/btw.spec.ts          7 条确定性浏览器 spec
+  specs/btw.spec.ts          7 条核心浏览器 spec
+  specs/history-theme.spec.ts 深色主题历史面板回归（Chromium/Firefox dark）
   specs/real.nightly.spec.ts 真实 provider，默认 skip
 ```
 
@@ -22,6 +23,7 @@ e2e/
 - **真实鉴权**：导航 Host 打印的 `?token=...` URL，换取 `dsh-auth-*` cookie；没有关闭鉴权，没有伪造 owner peer。
 - **真实 Host**：`dsh --profile e2e`，`dsh plugin add` 链接当前插件；workspace domain 预置。
 - **非安全 origin**：默认绑定第一个非 loopback IPv4（如 `10.10.0.2`），使 `crypto.randomUUID` 为 undefined；可用 `DSH_E2E_BIND_HOST` 覆盖。若只有 loopback，对应 spec 会 skip。
+- **浏览器矩阵**：`chromium` / `firefox` 跑 7 条核心 spec；`chromium-dark` / `firefox-dark` 只跑深色历史回归，Host 通过 `ui-theme.preference=dark` 启动。
 - **确定性模型**：`fixtures/fake-llm` 注册 `fake/fake-1`，逐 token 输出、`[slow]` 延迟、`[tool]` 强制 bash 工具调用、abort 终止。
 - **等待策略**：Playwright web-first assertions / `expect.poll`；禁止用固定 sleep 作为主要等待。
 - **失败产物**：trace + screenshot 保留；video 关闭（需要匹配的 Playwright ffmpeg）。
@@ -39,9 +41,9 @@ npm run test:e2e:real     # DSH_E2E_REAL=1 + DEEPSEEK_API_KEY，nightly
 
 - `dsh` 在 `PATH`（或 `DSH_BIN`），版本符合 `engines.dsh`
 - `pnpm` 在 `PATH`（Host 的 plugin add 使用）
-- Playwright Chromium；配置会自动探测 `~/.cache/ms-playwright/chromium_headless_shell-*` 或 `chromium-*`，否则 `npx playwright install chromium`
+- Playwright Chromium + Firefox；配置会自动探测 `~/.cache/ms-playwright` 或仓库 `.playwright-browsers`，否则 `npx playwright install chromium firefox`
 
-运行产物在 `.e2e-runs/`（已 gitignore）：`host-*/`、`host-*/host.log`、`artifacts/`。
+运行产物在 `.e2e-runs/`（已 gitignore）：`host-*/`、`host-*/host.log`、`artifacts/`。完整矩阵是 16 passed + 2 个 nightly skip（每个 light 项目各一个）。
 
 ## 必须保持的契约
 
@@ -52,6 +54,7 @@ npm run test:e2e:real     # DSH_E2E_REAL=1 + DEEPSEEK_API_KEY，nightly
 5. **选择器**：优先 `getByRole` / `getByTestId` / `data-chat-node-key`；不要依赖 Lexical 内部 class。
 6. **等待**：`expect(...)` / `expect.poll`；`page.waitForTimeout` 只用于观察流式采样，不作为成功条件。
 7. **非 secure origin**：修改 Host 绑定方式时确认 `host.insecure` 与 `crypto.randomUUID` 断言仍成立。
+8. **深色模式**：不要用 `colorScheme` 模拟，必须通过隔离 profile 的 `ui-theme.preference=dark`，否则测不到 DSH token。
 
 ## 子目录
 
@@ -62,4 +65,4 @@ npm run test:e2e:real     # DSH_E2E_REAL=1 + DEEPSEEK_API_KEY，nightly
 
 ## 与 CI
 
-`.github/workflows/e2e.yml` 在 `workflow_dispatch` 和每日 schedule 上运行；安装 DSH/pnpm/Chromium 后执行 `npm run test:e2e`，失败上传 `.e2e-runs/artifacts` 和 host 日志。单元 CI 不跑浏览器套件。
+`.github/workflows/e2e.yml` 在 `workflow_dispatch` 和每日 schedule 上运行；安装 DSH/pnpm/Chromium + Firefox 后执行 `npm run test:e2e`，失败上传 `.e2e-runs/artifacts` 和 host 日志。单元 CI 不跑浏览器套件。

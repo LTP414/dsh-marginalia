@@ -8,7 +8,7 @@
 
 ```ts
 {
-  tokenUrl, baseUrl, home, profile, workspace, toolPath,
+  tokenUrl, baseUrl, theme, home, profile, workspace, toolPath,
   bindHost, insecure, port, logPath,
   stop(): Promise<void>
 }
@@ -21,9 +21,10 @@
 3. `dsh --profile e2e --from-default-profile web --dump-config` 初始化自定义 profile（不会用用户 profile）。
 4. `dsh plugin --profile e2e add <repo>` 链接被测插件。
 5. 非 real 模式再 `dsh plugin add e2e/fixtures/fake-llm`。
-6. 写 `profile/cordis.patch.yml`，覆盖 `agent-default-model`：
+6. 写 `profile/cordis.patch.yml`，覆盖 `agent-default-model` 和 `ui-theme`：
    - fake：`fake/fake-1`
    - real：`DSH_E2E_REAL_PROVIDER` / `DSH_E2E_REAL_MODEL`（默认 `deepseek-official/deepseek-flash`）
+   - theme：`preference: light|dark`（worker fixture 从项目名是否含 `dark` 推导，传给 `startE2EHost({theme})`）
 7. `seedWorkspace()` 写 `storages/workspace.json`（domain version 2，path 指向 `home/workspace`，`sessionIds: []`）。
 8. `freePort()` + 选择绑定地址：`DSH_E2E_BIND_HOST` > 第一个非 loopback IPv4 > `127.0.0.1`。
 9. `spawn('dsh', ['--profile','e2e','--no-open','--port',port,'--host',bindHost])`。

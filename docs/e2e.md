@@ -13,6 +13,7 @@ against a **real isolated DSH Host**, with a deterministic fake model. It does n
 | Auth | yes | the launch URL's process token is exchanged for the signed `dsh-auth-*` cookie |
 | Fork / child session / tool guard | yes | the plugin runs its normal Host path |
 | Model | fake | a test bundle registering the `fake` provider |
+| Browsers | Chromium + Firefox | four projects: light/dark × chromium/firefox |
 | Persistence | yes | real `storage-domain` JSON backend in the isolated home |
 
 ## Isolation
@@ -84,6 +85,7 @@ domain record before launch. The GUI opens the workspace with a blank session. T
 | Tool guard | a forced `bash` call is denied; the target file is untouched; transcript unchanged |
 | Insert | the answer can be placed into the composer without sending it |
 | Insecure origin | `crypto.randomUUID` is undefined and `/btw` still works |
+| Dark theme history | send labels remain visible; panel is opaque; turns scroll independently; follow-up stays pinned |
 | Real nightly | skipped unless explicitly enabled; runs the same browser path against the configured real provider |
 
 ## Running
@@ -98,12 +100,29 @@ Requirements:
 
 - `dsh` on `PATH` (`DSH_BIN` overrides), matching the plugin's engine range
 - `pnpm` on `PATH` (the Host's plugin add uses it)
-- Playwright Chromium. The config auto-detects `~/.cache/ms-playwright/chromium_headless_shell-*`
-  and `~/.cache/ms-playwright/chromium-*`; otherwise run `npx playwright install chromium`.
+- Playwright Chromium + Firefox. The config auto-detects `~/.cache/ms-playwright` and the repo-local
+  `.playwright-browsers/`; otherwise run `npx playwright install chromium firefox`.
 
 Artifacts: trace and screenshot on failure under `.e2e-runs/artifacts`; video is off because it
 requires the matching Playwright ffmpeg build. Each worker leaves its host log and storage under
 `.e2e-runs/host-*` for diagnosis.
+
+## Browsers and themes
+
+Four projects:
+
+| Project | Specs | Theme |
+| --- | --- | --- |
+| `chromium` | `btw.spec.ts` | DSH light (profile patch) |
+| `firefox` | `btw.spec.ts` | DSH light |
+| `chromium-dark` | `history-theme.spec.ts` | DSH dark (`ui-theme.preference=dark`) |
+| `firefox-dark` | `history-theme.spec.ts` | DSH dark |
+
+The full matrix is **16 passed + 2 skipped** (the real-provider spec in the two light projects).
+The theme is not simulated with `colorScheme`; the fixture writes the real `ui-theme` profile patch.
+The dark regression asserts button label contrast (the old white-on-white `brand-primary` fill),
+opacity 1 for disabled buttons, an opaque panel, a scrolling turn list, and a follow-up form that
+stays below it. `Firefox + DSH dark` is the original failure combination.
 
 ## Real-provider nightly
 

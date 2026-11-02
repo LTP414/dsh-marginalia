@@ -16,7 +16,7 @@
 - `setup-node` Node 24 + npm cache。
 - `npm ci`。
 - 全局安装 `pnpm@11` 与 `@deepseek-ai/dsh@0.2.1-rc.2`（e2e fixture 的 `dsh`/`pnpm` 依赖）。
-- `npx playwright install --with-deps chromium`。
+- `npx playwright install --with-deps chromium firefox`。
 - `npm run test:e2e`（脚本先 build）。
 - 失败时上传 `.e2e-runs/artifacts` 和 `.e2e-runs/host-*/host.log`。
 

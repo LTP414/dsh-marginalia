@@ -4,7 +4,7 @@
 
 ## 背景
 
-`dsh-marginalia` 是 DeepSeek Harness（DSH）的 Host + Web Client 插件包，版本 `0.2.0`，Apache-2.0。
+`dsh-marginalia` 是 DeepSeek Harness（DSH）的 Host + Web Client 插件包，版本 `0.2.1`，Apache-2.0。
 
 它实现 oh-my-pi 风格的 `/btw`：在主对话旁边问一个**只读**的侧问题，回答留在“页边”，不进入主 transcript。项目名取自 `marginalia`（页边注）。
 
@@ -71,11 +71,11 @@
 ```bash
 npm run check          # typecheck + 53 unit tests + build + built-artifact smoke
 npm run test:coverage  # unit suite with coverage
-npm run test:e2e       # 7 real-browser specs + 1 skipped real-provider spec
+npm run test:e2e       # Chromium + Firefox + dark projects; 16 passed, 2 nightly skipped
 npm run test:e2e:real  # nightly only: DSH_E2E_REAL=1 + DEEPSEEK_API_KEY
 ```
 
-浏览器套件需要 `dsh` 在 `PATH`（或 `DSH_BIN`）以及 Playwright Chromium；它会创建 `.e2e-runs/` 下的隔离环境。不要为了让测试通过而关闭鉴权或改用户 profile。
+浏览器套件需要 `dsh` 在 `PATH`（或 `DSH_BIN`）以及 Playwright Chromium + Firefox；它会创建 `.e2e-runs/` 下的隔离环境。不要为了让测试通过而关闭鉴权或改用户 profile。
 
 ## 约定
 

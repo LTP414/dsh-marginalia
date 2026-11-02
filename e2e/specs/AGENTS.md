@@ -33,6 +33,22 @@ fake LLM 由问题文本决定行为（详见 `../fixtures/fake-llm/AGENTS.md`�
 
 它验证真实 archive 路径，不只是 mock。归档是 best-effort，所以用 `expect.poll`。
 
+## `history-theme.spec.ts`（1 条，仅 dark projects）
+
+`testMatch` 只在 `chromium-dark` / `firefox-dark` 项目运行；Host fixture 通过 profile patch 设置
+`ui-theme.preference=dark`。
+
+断言：
+
+- `body[data-ds-dark-theme]` 存在；
+- history 面板背景不是透明；
+- `Ask` / `Follow up` 按钮有可见文字、`opacity === 1`、文字色与背景色不同、宽度未被压缩；
+- 6 轮对话使 `[data-testid=marginalia-turns]` 产生滚动；
+- 追问框位于 turns 视口下方，滚动 turns 后位置不变；
+- 主记录节点数不变。
+
+这是 `Firefox + DSH 深色` 下“纯色按钮无文字 / 追问框与后续对话重合”的回归测试。
+
 ## `real.nightly.spec.ts`（1 条，默认跳过）
 
 - 文件顶部 `test.skip(DSH_E2E_REAL !== '1')` 和 `!DEEPSEEK_API_KEY`。
