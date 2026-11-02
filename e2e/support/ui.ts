@@ -30,7 +30,13 @@ export function historyPanel(page: Page): Locator {
 export async function resumeApp(page: Page): Promise<void> {
   await page.waitForSelector('#root')
   const preview = page.getByRole('button', { name: 'Continue' })
-  if (await preview.count() && await preview.isVisible()) await preview.click()
+  try {
+    await preview.waitFor({ state: 'visible', timeout: 2_000 })
+    await preview.click()
+  } catch {
+    // A profile without the preview notice (or a persisted dismissal) has no
+    // Continue button; fall through to the composer.
+  }
   await expect(composer(page)).toBeVisible()
 }
 

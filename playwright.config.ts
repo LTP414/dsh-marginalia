@@ -3,32 +3,77 @@ import { existsSync, readdirSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
+function browserCaches(): string[] {
+  const configured = process.env.PLAYWRIGHT_BROWSERS_PATH
+  return [...new Set([
+    configured,
+    join(homedir(), '.cache', 'ms-playwright'),
+    join(process.cwd(), '.playwright-browsers'),
+  ].filter((value): value is string => Boolean(value)))]
+}
+
+function newest(cache: string, prefix: string): string | undefined {
+  if (!existsSync(cache)) return undefined
+  return readdirSync(cache).sort().reverse().find(name => name.startsWith(prefix))
+}
+
 /**
- * Prefer an explicitly configured browser, then the headless shell already in
- * the Playwright cache. `npx playwright install chromium` works too; the
- * fallback simply returns undefined and lets Playwright resolve its default.
+ * Prefer an explicit executable, then the Playwright cache. When neither is
+ * found, return undefined and let Playwright resolve its own managed browser.
  */
 function chromiumExecutable(): string | undefined {
   if (process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE) return process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
-  const cache = join(homedir(), '.cache', 'ms-playwright')
-  if (!existsSync(cache)) return undefined
-  const directories = readdirSync(cache).sort().reverse()
-  for (const directory of directories) {
-    if (!directory.startsWith('chromium_headless_shell-')) continue
-    const root = join(cache, directory)
+  for (const cache of browserCaches()) {
+    const shell = newest(cache, 'chromium_headless_shell-')
+    if (shell) {
+      for (const candidate of [
+        join(cache, shell, 'chrome-headless-shell-linux64', 'chrome-headless-shell'),
+        join(cache, shell, 'chrome-linux64', 'chrome-headless-shell'),
+      ]) {
+        if (existsSync(candidate) && statSync(candidate).isFile()) return candidate
+      }
+    }
+    const full = newest(cache, 'chromium-')
+    if (full) {
+      const candidate = join(cache, full, 'chrome-linux64', 'chrome')
+      if (existsSync(candidate) && statSync(candidate).isFile()) return candidate
+    }
+  }
+  return undefined
+}
+
+function firefoxExecutable(): string | undefined {
+  if (process.env.PLAYWRIGHT_FIREFOX_EXECUTABLE) return process.env.PLAYWRIGHT_FIREFOX_EXECUTABLE
+  for (const cache of browserCaches()) {
+    const directory = newest(cache, 'firefox-')
+    if (!directory) continue
     for (const candidate of [
-      join(root, 'chrome-headless-shell-linux64', 'chrome-headless-shell'),
-      join(root, 'chrome-linux64', 'chrome-headless-shell'),
+      join(cache, directory, 'firefox', 'firefox'),
+      join(cache, directory, 'firefox', 'firefox-bin'),
     ]) {
       if (existsSync(candidate) && statSync(candidate).isFile()) return candidate
     }
   }
-  for (const directory of directories) {
-    if (!directory.startsWith('chromium-')) continue
-    const candidate = join(cache, directory, 'chrome-linux64', 'chrome')
-    if (existsSync(candidate) && statSync(candidate).isFile()) return candidate
-  }
   return undefined
+}
+
+function chromiumUse() {
+  return {
+    ...devices['Desktop Chrome'],
+    launchOptions: {
+      ...(chromiumExecutable() ? { executablePath: chromiumExecutable() } : {}),
+      args: ['--no-sandbox'],
+    },
+  }
+}
+
+function firefoxUse() {
+  return {
+    ...devices['Desktop Firefox'],
+    launchOptions: {
+      ...(firefoxExecutable() ? { executablePath: firefoxExecutable() } : {}),
+    },
+  }
 }
 
 export default defineConfig({
@@ -36,25 +81,43 @@ export default defineConfig({
   timeout: 90_000,
   expect: { timeout: 15_000 },
   fullyParallel: false,
-  // The worker fixture owns an isolated Host; two workers are safe but one is
-  // the default for CI stability because each worker pays the profile setup.
+  // The worker fixture owns an isolated Host; each worker pays profile setup,
+  // so keep one worker by default for CI stability.
   workers: Number(process.env.E2E_WORKERS ?? 1),
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   reporter: [['list'], ['html', { open: 'never' }]],
   outputDir: '.e2e-runs/artifacts',
   use: {
-    ...devices['Desktop Chrome'],
     viewport: { width: 1400, height: 900 },
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     // Video needs the matching Playwright ffmpeg build; traces and screenshots
     // are the default failure artifacts so the suite runs with the cached browser.
     video: 'off',
-    launchOptions: {
-      ...(chromiumExecutable() ? { executablePath: chromiumExecutable() } : {}),
-      args: ['--no-sandbox'],
-    },
   },
-  projects: [{ name: 'chromium' }],
+  projects: [
+    {
+      name: 'chromium',
+      testIgnore: /history-theme\.spec\.ts/,
+      use: chromiumUse(),
+    },
+    {
+      name: 'firefox',
+      testIgnore: /history-theme\.spec\.ts/,
+      use: firefoxUse(),
+    },
+    {
+      // The same history panel in DSH's dark theme; this is the regression
+      // matrix for the white-on-white send label and the overlapping follow-up.
+      name: 'chromium-dark',
+      testMatch: /history-theme\.spec\.ts/,
+      use: chromiumUse(),
+    },
+    {
+      name: 'firefox-dark',
+      testMatch: /history-theme\.spec\.ts/,
+      use: firefoxUse(),
+    },
+  ],
 })

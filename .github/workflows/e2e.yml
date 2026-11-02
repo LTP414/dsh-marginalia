@@ -19,7 +19,7 @@ jobs:
       - name: Install DSH and pnpm
         run: npm install -g pnpm@11 @deepseek-ai/dsh@0.2.1-rc.2
       - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium firefox
       - name: Browser suite
         run: npm run test:e2e
       - name: Upload failure artifacts
