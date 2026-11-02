@@ -89,11 +89,15 @@ export const CSS = `
 .mgl-follow textarea:focus{outline:none;border-color:var(--dsw-alias-brand-primary);box-shadow:0 0 0 2px color-mix(in srgb,var(--dsw-alias-brand-primary) 18%,transparent)}
 .mgl-follow-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .mgl-send{
-  display:inline-flex;align-items:center;gap:5px;border:0;border-radius:7px;padding:4px 9px;
-  background:var(--dsw-alias-brand-primary);color:#fff;font:inherit;font-size:12px;line-height:18px;cursor:pointer;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:5px;box-sizing:border-box;flex:none;min-width:max-content;
+  border:0;border-radius:7px;padding:4px 9px;min-height:26px;
+  background:var(--dsw-alias-button-info-fill,var(--dsw-alias-brand-primary));color:var(--dsw-alias-label-primary-foreground,#fff);
+  font:inherit;font-size:12px;font-weight:500;line-height:18px;cursor:pointer;white-space:nowrap;
 }
 .mgl-send:hover:not(:disabled){filter:brightness(1.06)}
-.mgl-send:disabled{opacity:.45;cursor:default}
+/* Firefox paints disabled controls with UA colors; an opacity fade made the
+   white label disappear into the pill at 1400px. Keep the label crisp. */
+.mgl-send:disabled{opacity:1;cursor:default;filter:none}
 
 /* History panel */
 .mgl-backdrop{
@@ -104,8 +108,8 @@ export const CSS = `
 @keyframes mgl-fade{from{opacity:0}to{opacity:1}}
 .mgl-panel{
   width:min(980px,calc(100vw - 48px));height:min(720px,calc(100vh - 48px));
-  display:flex;flex-direction:column;overflow:hidden;
-  background:var(--dsw-alias-bg-overlay,var(--dsw-alias-bg-layer-1));color:var(--dsw-alias-label-primary);
+  display:flex;flex-direction:column;overflow:hidden;isolation:isolate;
+  background:var(--dsw-alias-bg-layer-1,#fff);color:var(--dsw-alias-label-primary);
   border:1px solid var(--dsw-alias-border-l2);border-radius:16px;
   box-shadow:var(--dsw-elevation-strong,0 24px 70px rgba(0,0,0,.32));
   font-family:var(--dsw-font-family,inherit);font-size:13px;
@@ -117,7 +121,7 @@ export const CSS = `
 .mgl-history-title h2{margin:0;font-size:15px;line-height:20px;font-weight:650}
 .mgl-history-title p{margin:1px 0 0;color:var(--dsw-alias-label-secondary);font-size:12px;line-height:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mgl-history-actions{display:flex;gap:2px;flex:none}
-.mgl-history-body{display:flex;min-height:0;flex:1}
+.mgl-history-body{display:flex;min-height:0;flex:1;overflow:hidden}
 .mgl-topic-rail{width:284px;flex:none;display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--dsw-alias-border-l1);padding:12px 10px 8px;gap:8px}
 .mgl-ask{display:flex;flex-direction:column;gap:6px;flex:none}
 .mgl-ask textarea{
@@ -146,12 +150,12 @@ export const CSS = `
 .mgl-empty{display:flex;flex-direction:column;align-items:center;gap:6px;padding:28px 16px;text-align:center;color:var(--dsw-alias-label-secondary)}
 .mgl-empty p{margin:0;font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary)}
 .mgl-empty span{font-size:11.5px;line-height:1.6}
-.mgl-detail{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;padding:16px 18px 10px;overflow:auto;scrollbar-width:thin}
+.mgl-detail{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;padding:16px 18px 10px;overflow:hidden}
 .mgl-detail-loading{display:flex;align-items:center;gap:8px;color:var(--dsw-alias-label-secondary);font-size:12.5px;padding:18px 4px}
 .mgl-detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex:none;margin-bottom:10px}
 .mgl-detail-head h3{margin:0;font-size:15px;line-height:20px;font-weight:650;overflow-wrap:anywhere}
 .mgl-detail-head p{margin:2px 0 0;font-size:11.5px;color:var(--dsw-alias-label-secondary)}
-.mgl-turns{display:flex;flex-direction:column;gap:12px;min-height:0}
+.mgl-turns{display:flex;flex:1 1 auto;flex-direction:column;gap:12px;min-height:0;overflow-y:auto;scrollbar-width:thin;padding-right:2px}
 .mgl-turn{border:1px solid var(--dsw-alias-border-l1);border-radius:11px;padding:10px 12px;background:var(--dsw-alias-bg-layer-1)}
 .mgl-turn[data-status="error"]{border-color:color-mix(in srgb,var(--dsw-alias-state-error-primary) 35%,var(--dsw-alias-border-l1))}
 .mgl-turn-head{display:flex;align-items:center;gap:8px;margin-bottom:7px}
@@ -167,7 +171,7 @@ export const CSS = `
 .mgl-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--dsw-alias-label-caption);font-weight:600}
 .mgl-turn-a{display:flex;flex-direction:column;gap:4px}
 .mgl-turn-a .mgl-md{font-size:12.5px}
-.mgl-history-follow{margin-top:14px;flex:none}
+.mgl-history-follow{flex:none;margin-top:8px;padding-top:10px;background:var(--dsw-alias-bg-layer-1);position:relative;z-index:1}
 .mgl-history-foot{flex:none;padding:7px 16px;border-top:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-caption);font-size:11px;line-height:16px}
 @media (max-width:760px){
   .mgl-backdrop{padding:0}

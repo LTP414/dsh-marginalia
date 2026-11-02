@@ -235,7 +235,7 @@ function HistoryBody({ store, history, t }: { readonly store: MarginaliaStore; r
                   {confirmDelete ? `${t('action.delete')}?` : t('action.delete')}
                 </button>
               </div>
-              <div className="mgl-turns">
+              <div className="mgl-turns" data-testid="marginalia-turns">
                 {history.topic.turns.map(turn => (
                   <TurnBlock
                     key={turn.id}
@@ -252,6 +252,7 @@ function HistoryBody({ store, history, t }: { readonly store: MarginaliaStore; r
                   />
                 ))}
               </div>
+              {history.error && <p className="mgl-error" role="alert">{history.error}</p>}
               <form className="mgl-follow mgl-history-follow" onSubmit={submitFollow}>
                 <textarea
                   value={follow}
@@ -277,7 +278,6 @@ function HistoryBody({ store, history, t }: { readonly store: MarginaliaStore; r
               </form>
             </>
           )}
-          {history.error && <p className="mgl-error" role="alert">{history.error}</p>}
         </section>
       </div>
 
