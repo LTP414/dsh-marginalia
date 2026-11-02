@@ -93,6 +93,11 @@ acceptance response. It follows the child's Chat target for partial text and sub
 session lifecycle. When the session goes idle, the Client reads the canonical turn back from the
 Host once (with bounded retries) so error/cancellation status wins over local inference.
 
+A fork seed is inherited history, not side history. The child Chat target therefore contains the
+parent's completed turns. The Host returns `baselineTurn` (the parent's last completed turn) with
+the acceptance payload, and the Client only reads assistant nodes with `turn > baselineTurn`.
+Without this filter, the parent's last answer would appear inside the side bubble while streaming.
+
 If retention fails (for example the child catalog row has not reached this Client yet), the store
 falls back to a bounded read-back loop rather than leaving a spinner forever.
 
@@ -104,11 +109,26 @@ hidden host commands over `remote.commands.execute`:
 
 - authenticated by the existing RPC carrier;
 - no new HTTP route or token scheme;
-- command results are logged by the command runner, including `btw-get` topic JSON.
+- hidden from the slash directory via a `commands.list` wrapper;
+- quiet in the session log via an `appendLifecycle` wrapper that drops the `command/run` /
+  `command/done` pair for these exact command ids.
+
+The last point matters: before the quieting shim, every ask produced Chat command nodes and a
+`btw-get` result — including the full topic JSON — was copied into `command/done`. The shim
+reuses the authenticated RPC without polluting the main transcript. It is an instance-level
+compatibility patch: if a future DSH removes `appendLifecycle`, the plugin warns and falls back to
+visible lifecycle rows.
 
 The alternative — a raw HTTP/SSE route — was rejected because the analysis explicitly warns about
-unauthenticated cross-session reads. A native Remote namespace is the right future replacement;
+unauthenticated cross-session reads. A native Remote namespace is the right long-term replacement;
 the protocol helpers in `src/shared.ts` keep that migration local.
+
+## Insert-to-composer
+
+The `conversation.input.overlay` standard props expose `inputActions`. The bubble's insert button
+calls `inputActions.setDraft(answer)`, so a user can carry an answer into the main composer without
+writing it to the transcript or triggering a model call. This is the honest replacement for
+oh-my-pi's `b` branch: DSH still has no public assistant-injection/branch API.
 
 ## Storage
 
@@ -131,6 +151,13 @@ There is no global JSON file.
 
 The Host remains the durability authority. Client state is recoverable by reopening history.
 
+## Browser verification
+
+The suite in [`e2e/`](../e2e) launches a real isolated Host, authenticates through the launch
+token, drives Chromium, and uses a deterministic fake LLM. See [`e2e.md`](e2e.md). Unit tests pin
+the pure logic; the browser suite pins the wiring, DOM, streaming, cancellation, reload, and
+tool-guard behavior.
+
 ## Failure matrix
 
 | Failure | Behaviour |
@@ -145,3 +172,6 @@ The Host remains the durability authority. Client state is recoverable by reopen
 | plugin unload | abort jobs, mark `interrupted`, release guard, close store |
 | child archive fails | logged; nothing user-visible |
 | user closes before ask accepts | turn id tombstone; late ask refuses |
+| parent answer inherited by fork | hidden by the `baselineTurn` filter |
+| command lifecycle hook unavailable | warning; command events become visible again |
+| browser e2e host fails to start | fixture fails with the isolated host log path |

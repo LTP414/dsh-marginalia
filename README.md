@@ -19,7 +19,7 @@ This is a DSH Host + Web Client bundle that implements the practical form of tha
 - **Streaming and cancellation** — the Web Client retains the child session, renders its partial
   text, and preserves what was generated when you stop it.
 - **No fabricated branch** — DSH has no public "insert an assistant message / create a branch"
-  API. Marginalia does not pretend; it offers insert-to-composer in a future version instead.
+  API. Marginalia does not pretend; it offers **insert into composer** as the safe replacement.
 
 ## Requirements
 
@@ -29,6 +29,7 @@ This is a DSH Host + Web Client bundle that implements the practical form of tha
 - A composed `fork` subagent provider and `storage-domain` for durable history
   (both are part of the standard Web profile; the plugin falls back to process memory if the
   storage domain is absent)
+- For the browser suite: `dsh` on `PATH` (or `DSH_BIN`), `pnpm`, and Chromium for Playwright
 
 ## Install
 
@@ -36,7 +37,8 @@ From this checkout:
 
 ```bash
 npm install
-npm run check          # typecheck + 50 unit tests + build + smoke
+npm run check          # typecheck + 53 unit tests + build + smoke
+npm run test:e2e       # 7 real-browser specs against an isolated Host + fake LLM
 ```
 
 Then install the workspace directory as a bundle through the Harness plugin manager, or add it to
@@ -60,7 +62,7 @@ Host's module table.
 | Open topic history | `/btw` with no argument, or the Marginalia button at the left of the composer |
 | Follow up in the same topic | The send icon on a finished bubble, or the follow-up box in history |
 | Stop a running answer | The stop button on the bubble; the partial answer is kept |
-| Copy / retry / delete | Buttons on a bubble or a history turn |
+| Copy / insert / retry / delete | Buttons on a bubble, a history turn, or the composer |
 | Close the history panel | `Esc`, the close button, or click the backdrop |
 
 `/btw` accepts text only. Images and files stay in the composer and the submission is refused, so
@@ -71,7 +73,7 @@ the draft is not silently lost.
 ```
 /btw question
   → Client input trigger claims the line
-  → Host btw-ask (authenticated command RPC)
+  → Host btw-ask (authenticated command RPC, lifecycle logging suppressed)
       reserve child id → guard the id → fork the parent
       append one user-role <btw> prompt
       persist a running turn
@@ -82,8 +84,9 @@ the draft is not silently lost.
 
 The public `/btw` command is contributed by an `inputTriggers` slash source, not by patching the
 official command UI. Bubbles use `conversation.input.overlay`; history uses `shell.overlay`; the
-toolbar button uses `conversation.input.left`. The only host-side patch is a scoped filter around
-`commands.list` that hides the internal transport commands from the slash directory.
+toolbar button uses `conversation.input.left`. The host-side compatibility shims hide the internal
+transport commands from the slash directory and drop their `command/run`/`command/done` lifecycle
+pair, so the main transcript and session log stay clean.
 
 See [`docs/architecture.md`](docs/architecture.md) for the full design and
 [`docs/verification.md`](docs/verification.md) for what has and has not been exercised.
@@ -98,10 +101,11 @@ See [`docs/architecture.md`](docs/architecture.md) for the full design and
   200 turns/topic, 4 active side questions process-wide, 10 minute watchdog.
 
 The internal commands are `btw-ask`, `btw-list`, `btw-get`, `btw-cancel`, `btw-delete`. They are
-hidden from the slash menu but still resolve for the authenticated RPC. Command results are part
-of the session's command lifecycle log; this is the deliberate cost of using the existing
-authenticated RPC instead of opening an unauthenticated HTTP route. A native Remote namespace is a
-future improvement.
+hidden from the slash menu and quiet in the session log, but still resolve for the authenticated
+RPC. This reuses the existing authenticated carrier without opening an unauthenticated HTTP route;
+a native Remote namespace remains the better long-term transport. The quieting shim depends on
+`CommandRuntime.appendLifecycle`; if a future DSH removes it, the plugin logs a warning and falls
+back to visible command lifecycle events.
 
 ## Security properties
 
@@ -128,8 +132,30 @@ future improvement.
 - **Parent partial is best-effort.** If the stream capture is unavailable, the section is omitted
   rather than fabricated.
 - **Archive is best-effort.** A failed archive is logged; the side history is still correct.
-- **Command lifecycle log growth.** Internal command results are recorded by the Host command
-  runner. This is a known transport trade-off, documented above.
+- **Transport is still command RPC.** The lifecycle shim removes transcript/log pollution, but the
+  internal commands remain directly callable by an authorized RPC client. A generated Remote
+  namespace would be cleaner; it is not implemented yet.
+- **Subagent view is not in the browser suite.** Unit tests cover the refusal and hidden toolbar;
+  navigating into a live delegated child in the GUI is not automated.
+- **Real-provider acceptance is gated.** `real.nightly.spec.ts` is skipped unless
+  `DSH_E2E_REAL=1` and `DEEPSEEK_API_KEY` are set.
+
+## End-to-end verification
+
+The browser suite starts a **separate** `DSH_HOME` and custom profile per worker, authenticates
+through the real launch-token exchange, seeds a workspace, and runs a deterministic fake LLM that
+streams tokens, aborts, and forces a tool call. It binds a non-loopback HTTP address by default so
+the insecure-context UUID path is exercised for real.
+
+Covered specs: slash menu claim, token-level growth, Stop with partial history, follow-up topic,
+reload persistence, read-only tool denial with an untouched file, insert-to-composer, and a
+plain-HTTP origin with `crypto.randomUUID === undefined`.
+
+See [`docs/e2e.md`](docs/e2e.md). Real-preset acceptance stays out of the deterministic suite:
+
+```bash
+DSH_E2E_REAL=1 DEEPSEEK_API_KEY=... npm run test:e2e:real
+```
 
 ## Development
 
@@ -137,6 +163,8 @@ future improvement.
 npm run typecheck
 npm test
 npm run build
+npm run test:coverage
+npm run test:e2e
 ```
 
 Layout:
@@ -147,7 +175,9 @@ src/shared.ts           protocol, limits, prompt, sanitization
 src/host/               engine, storage, guard, stream capture, commands
 src/client/             trigger source, store, bubble, history, styles
 tests/                  pure unit and wiring tests
-docs/                   design research, architecture, verification
+e2e/                    isolated Host, fake LLM, Playwright specs
+scripts/                build and built-artifact smoke
+docs/                   design research, architecture, verification, e2e
 ```
 
 ## License

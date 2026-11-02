@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.0 — 2026-11-02
+
+- Real-browser end-to-end suite: isolated `DSH_HOME`/profile per worker, real launch-token auth,
+  preseeded workspace, deterministic fake LLM, non-loopback plain-HTTP origin, trace/screenshot on
+  failure.
+- Seven browser specs: slash menu + streaming, Stop/partial history, follow-up, reload persistence,
+  read-only tool denial with an untouched file, insert-to-composer, and the insecure-origin UUID
+  path. A real-provider nightly spec is gated and skipped by default.
+- Suppress the internal command lifecycle pair (`command/run` / `command/done`), so side questions
+  no longer add Chat nodes or copy `btw-get` JSON into the session log.
+- Filter inherited fork turns from the streaming bubble using the Host's `baselineTurn`.
+- Add insert-to-composer as the safe replacement for the unavailable branch operation.
+- Unit suite grows to 53 tests; built-artifact smoke remains part of `npm run check`.
+
 ## 0.1.0 — 2026-10-28
 
 First usable release.
@@ -21,5 +35,5 @@ First usable release.
   follow-up, cancel with partial preservation, copy/collapse/close.
 - Client: topic history at `shell.overlay` with list/detail, retry, delete, copy, follow-up, and a
   composer toolbar entry point.
-- Tooling: TypeScript typecheck, 50 Vitest tests, built-artifact smoke, self-contained esbuild bundles, CI workflow.
+- Tooling: TypeScript typecheck, 45 Vitest tests, built-artifact smoke, self-contained esbuild bundles, CI workflow.
 
