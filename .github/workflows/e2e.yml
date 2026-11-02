@@ -1,0 +1,33 @@
+name: e2e
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 18 * * *'
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Install DSH and pnpm
+        run: npm install -g pnpm@11 @deepseek-ai/dsh@0.2.1-rc.2
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Browser suite
+        run: npm run test:e2e
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-artifacts
+          path: |
+            .e2e-runs/artifacts
+            .e2e-runs/host-*/host.log
+          if-no-files-found: ignore
