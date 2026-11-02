@@ -76,6 +76,43 @@ function firefoxUse() {
   }
 }
 
+function screenshotProjects() {
+  const projects = [
+    {
+      name: 'chromium',
+      testIgnore: /(history-theme|screens)\.spec\.ts/,
+      use: chromiumUse(),
+    },
+    {
+      name: 'firefox',
+      testIgnore: /(history-theme|screens)\.spec\.ts/,
+      use: firefoxUse(),
+    },
+    {
+      // The same history panel in DSH's dark theme; this is the regression
+      // matrix for the white-on-white send label and the overlapping follow-up.
+      name: 'chromium-dark',
+      testMatch: /history-theme\.spec\.ts/,
+      use: chromiumUse(),
+    },
+    {
+      name: 'firefox-dark',
+      testMatch: /history-theme\.spec\.ts/,
+      use: firefoxUse(),
+    },
+  ]
+  // Screenshot generation is explicit: it writes docs/assets and is not part
+  // of the normal test matrix.
+  if (process.env.E2E_SCREENSHOTS === '1') {
+    projects.push({
+      name: 'screens',
+      testMatch: /screens\.spec\.ts/,
+      use: chromiumUse(),
+    })
+  }
+  return projects
+}
+
 export default defineConfig({
   testDir: './e2e/specs',
   timeout: 90_000,
@@ -96,28 +133,5 @@ export default defineConfig({
     // are the default failure artifacts so the suite runs with the cached browser.
     video: 'off',
   },
-  projects: [
-    {
-      name: 'chromium',
-      testIgnore: /history-theme\.spec\.ts/,
-      use: chromiumUse(),
-    },
-    {
-      name: 'firefox',
-      testIgnore: /history-theme\.spec\.ts/,
-      use: firefoxUse(),
-    },
-    {
-      // The same history panel in DSH's dark theme; this is the regression
-      // matrix for the white-on-white send label and the overlapping follow-up.
-      name: 'chromium-dark',
-      testMatch: /history-theme\.spec\.ts/,
-      use: chromiumUse(),
-    },
-    {
-      name: 'firefox-dark',
-      testMatch: /history-theme\.spec\.ts/,
-      use: firefoxUse(),
-    },
-  ],
+  projects: screenshotProjects(),
 })

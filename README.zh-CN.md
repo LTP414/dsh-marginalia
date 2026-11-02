@@ -1,3 +1,7 @@
+<p align="right">
+  <a href="README.md"><img src="docs/assets/lang-en.svg" alt="English README" height="28"></a>
+</p>
+
 # dsh-marginalia · 边注
 
 > DeepSeek Harness 的只读旁问：在主对话页边提问，不弄脏主对话。
@@ -12,6 +16,22 @@
 - **主题与历史**：每问持久化状态与回答；追问会重放该主题，并看到**当前**主会话，而不是打开面板时的冻结快照。
 - **流式与取消**：Web Client retain 子会话并渲染 partial；停止时保留已生成内容。
 - **不伪造 branch**：DSH 没有公开的 assistant 注入／分支 API；提供“插入输入框”作为安全替代。
+
+## 功能截图
+
+<p align="center">
+  <img src="docs/assets/screenshots/btw-menu.png" alt="slash 菜单中的真实 /btw 入口" width="49%">
+  <img src="docs/assets/screenshots/btw-streaming.png" alt="旁注气泡流式输出，带停止与插入按钮" width="49%">
+</p>
+<p align="center"><sub>真实的 <code>/btw</code> slash 入口 · 页边流式输出，带停止与插入按钮</sub></p>
+
+<p align="center">
+  <img src="docs/assets/screenshots/btw-history.png" alt="浅色主题下的 Marginalia 两轮主题历史" width="49%">
+  <img src="docs/assets/screenshots/btw-history-dark.png" alt="深色主题下的 Marginalia 两轮主题历史" width="49%">
+</p>
+<p align="center"><sub>支持追问的主题历史 · DSH 浅色与深色主题</sub></p>
+
+截图由 Playwright 截图 spec（`npm run screenshots`）在隔离 Host 与确定性 demo 模型上生成，不是手工修改 UI 的合成图。
 
 ## 环境
 

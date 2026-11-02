@@ -66,6 +66,7 @@
     "test:e2e": "npm run build && playwright test",
     "test:e2e:headed": "npm run build && playwright test --headed",
     "test:e2e:real": "npm run build && DSH_E2E_REAL=1 playwright test e2e/specs/real.nightly.spec.ts",
+    "screenshots": "npm run build && E2E_SCREENSHOTS=1 playwright test e2e/specs/screens.spec.ts --project=screens --workers=1",
     "check": "npm run typecheck && npm test && npm run build && npm run smoke",
     "prepack": "npm run build"
   },

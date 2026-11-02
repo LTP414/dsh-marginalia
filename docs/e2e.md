@@ -107,6 +107,17 @@ Artifacts: trace and screenshot on failure under `.e2e-runs/artifacts`; video is
 requires the matching Playwright ffmpeg build. Each worker leaves its host log and storage under
 `.e2e-runs/host-*` for diagnosis.
 
+## README screenshots
+
+```bash
+npm run screenshots
+```
+
+`E2E_SCREENSHOTS=1` adds a `screens` project that captures `docs/assets/screenshots/`:
+`btw-menu.png`, `btw-streaming.png`, `btw-history.png`, `btw-history-dark.png`. It uses a demo
+profile response and disables CSS animations for stable captures. It is not part of the normal
+test matrix.
+
 ## Browsers and themes
 
 Four projects:

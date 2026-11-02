@@ -49,6 +49,12 @@ fake LLM 由问题文本决定行为（详见 `../fixtures/fake-llm/AGENTS.md`�
 
 这是 `Firefox + DSH 深色` 下“纯色按钮无文字 / 追问框与后续对话重合”的回归测试。
 
+## `screens.spec.ts`（截图生成，仅显式运行）
+
+`E2E_SCREENSHOTS=1` 时由 `screens` project 运行，生成 `docs/assets/screenshots/` 的四张 README 图。
+流程：seed 主会话 → 截 `/btw` 菜单 → claim 并截流式气泡 → 追问 → 截浅色历史 → 启动独立 dark Host → 截深色历史。
+使用 `DSH_E2E_DEMO=1` 的演示文案；截图使用 `animations: disabled` 避免淡入半透明。
+
 ## `real.nightly.spec.ts`（1 条，默认跳过）
 
 - 文件顶部 `test.skip(DSH_E2E_REAL !== '1')` 和 `!DEEPSEEK_API_KEY`。

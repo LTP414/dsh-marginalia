@@ -12,6 +12,7 @@ e2e/
   fixtures/fake-llm/  确定性 LLM bundle（独立 package）
   specs/btw.spec.ts          7 条核心浏览器 spec
   specs/history-theme.spec.ts 深色主题历史面板回归（Chromium/Firefox dark）
+  specs/screens.spec.ts       README 截图生成（仅 E2E_SCREENSHOTS=1 + screens project）
   specs/real.nightly.spec.ts 真实 provider，默认 skip
 ```
 
@@ -44,6 +45,8 @@ npm run test:e2e:real     # DSH_E2E_REAL=1 + DEEPSEEK_API_KEY，nightly
 - Playwright Chromium + Firefox；配置会自动探测 `~/.cache/ms-playwright` 或仓库 `.playwright-browsers`，否则 `npx playwright install chromium firefox`
 
 运行产物在 `.e2e-runs/`（已 gitignore）：`host-*/`、`host-*/host.log`、`artifacts/`。完整矩阵是 16 passed + 2 个 nightly skip（每个 light 项目各一个）。
+
+README 截图：`npm run screenshots`（`E2E_SCREENSHOTS=1` + `screens` project），写入 `docs/assets/screenshots/`。
 
 ## 必须保持的契约
 

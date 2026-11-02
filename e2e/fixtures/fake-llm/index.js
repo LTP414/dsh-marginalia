@@ -11,6 +11,9 @@ export const inject = ['llm']
 
 const TOOL_PATH = process.env.DSH_E2E_TOOL_PATH ?? '/tmp/dsh-e2e-should-not-exist.txt'
 const SLOW_DELAY_MS = Number(process.env.DSH_E2E_SLOW_DELAY_MS ?? 90)
+const DEMO = process.env.DSH_E2E_DEMO === '1'
+const DEMO_DELAY_MS = 35
+const DISPLAY_NAME = DEMO ? 'Marginalia Demo' : 'Fake 1'
 
 function sleep(ms, signal) {
   return new Promise((resolve) => {
@@ -101,7 +104,7 @@ async function* streamToolCall(signal) {
 
 const adapter = {
   providerInfo(provider) {
-    return { id: provider, name: 'E2E Fake LLM' }
+    return { id: provider, name: DEMO ? 'Marginalia Demo' : 'E2E Fake LLM' }
   },
   providerRetryPolicy() {
     return undefined
@@ -113,13 +116,13 @@ const adapter = {
     return { width: image.width, height: image.height, maxBytes: image.bytes }
   },
   async listModels(provider) {
-    return [{ provider, id: 'fake-1', name: 'Fake 1', description: 'Deterministic e2e model', inputModalities: ['text'] }]
+    return [{ provider, id: 'fake-1', name: DISPLAY_NAME, description: 'Deterministic e2e model', inputModalities: ['text'] }]
   },
   async resolveModel(provider, model) {
     return {
       provider,
       id: model,
-      name: 'Fake 1',
+      name: DISPLAY_NAME,
       inputModalities: ['text'],
       context: { contextWindow: 200_000 },
       defaultMaxTokens: 8_192,
@@ -147,6 +150,16 @@ const adapter = {
         yield* streamToolCall(options.signal)
         return
       }
+      if (DEMO) {
+        const normalized = question.toLowerCase()
+        const text = normalized.includes('start with')
+          ? 'Start with the queue for the ship event. Expose a webhook only as a subscription layer on top, so retries and ordering stay under your control.'
+          : normalized.includes('trade-off')
+            ? "A queue decouples delivery from the partner's availability and makes retries explicit. A webhook is simpler to wire up, but it moves backpressure and retry policy onto the receiver."
+            : 'Keep the event delivery on your side and treat the partner endpoint as a subscription. That keeps retries, ordering, and failure handling observable.'
+        yield* streamText(text, options.signal, DEMO_DELAY_MS)
+        return
+      }
       const slow = question.includes('[slow]')
       const text = slow
         ? `This is a slow side answer about ${question.replace(/\[[^\]]+\]/g, '').trim()} with enough tokens to observe streaming.`
@@ -157,11 +170,17 @@ const adapter = {
 
     // Session-title and other auxiliary calls.
     if (options.purpose === 'session-title') {
-      yield* streamText('E2E Session', options.signal, 0)
+      yield* streamText(DEMO ? 'Queue vs webhook' : 'E2E Session', options.signal, 0)
       return
     }
 
-    yield* streamText('Main answer accepted. The main conversation is seeded.', options.signal, 0)
+    yield* streamText(
+      DEMO
+        ? "For this workflow I'd keep the order event on a queue and expose webhooks as subscriptions. That keeps retries and ordering under our control while still giving the partner a push endpoint."
+        : 'Main answer accepted. The main conversation is seeded.',
+      options.signal,
+      DEMO ? 12 : 0,
+    )
   },
 }
 

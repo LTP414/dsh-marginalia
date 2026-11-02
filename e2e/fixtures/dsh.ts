@@ -8,7 +8,8 @@ export interface MarginaliaFixtures {
 export const test = base.extend<{}, MarginaliaFixtures>({
   host: [async ({}, use, workerInfo) => {
     const theme = workerInfo.project.name.includes('dark') ? 'dark' : 'light'
-    const host = await startE2EHost({ theme })
+    const demo = workerInfo.project.name === 'screens'
+    const host = await startE2EHost({ theme, demo })
     // eslint-disable-next-line no-console
     console.log(`[e2e] ${host.theme} host ${host.tokenUrl.replace(/token=.*/, 'token=***')} (${host.home})`)
     try {

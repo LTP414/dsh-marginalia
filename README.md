@@ -1,3 +1,7 @@
+<p align="right">
+  <a href="README.zh-CN.md"><img src="docs/assets/lang-zh.svg" alt="中文 README" height="28"></a>
+</p>
+
 # dsh-marginalia
 
 > Read-only side questions for DeepSeek Harness. Ask in the margin, keep the main thread clean.
@@ -20,6 +24,23 @@ This is a DSH Host + Web Client bundle that implements the practical form of tha
   text, and preserves what was generated when you stop it.
 - **No fabricated branch** — DSH has no public "insert an assistant message / create a branch"
   API. Marginalia does not pretend; it offers **insert into composer** as the safe replacement.
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/assets/screenshots/btw-menu.png" alt="The real /btw entry in the slash menu" width="49%">
+  <img src="docs/assets/screenshots/btw-streaming.png" alt="A side answer streaming in the margin with Stop and insert actions" width="49%">
+</p>
+<p align="center"><sub>The real <code>/btw</code> slash entry · streaming in the margin, with Stop and insert actions</sub></p>
+
+<p align="center">
+  <img src="docs/assets/screenshots/btw-history.png" alt="Light-theme Marginalia topic history with two turns" width="49%">
+  <img src="docs/assets/screenshots/btw-history-dark.png" alt="Dark-theme Marginalia topic history with two turns" width="49%">
+</p>
+<p align="center"><sub>Topic history with follow-up · light and dark DSH themes</sub></p>
+
+Screenshots are produced by the Playwright screenshot spec (`npm run screenshots`) against an
+isolated Host and a deterministic demo model, not by hand-editing the UI.
 
 ## Requirements
 

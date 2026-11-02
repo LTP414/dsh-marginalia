@@ -134,7 +134,7 @@ async function waitForUrl(proc: ChildProcess, logPath: string): Promise<string> 
   })
 }
 
-export async function startE2EHost(options: { readonly real?: boolean; readonly theme?: E2ETheme } = {}): Promise<E2EHost> {
+export async function startE2EHost(options: { readonly real?: boolean; readonly theme?: E2ETheme; readonly demo?: boolean } = {}): Promise<E2EHost> {
   mkdirSync(RUNS, { recursive: true })
   const home = mkdtempSync(join(RUNS, 'host-'))
   const workspace = join(home, 'workspace')
@@ -174,6 +174,7 @@ export async function startE2EHost(options: { readonly real?: boolean; readonly 
     ...env,
     DSH_E2E_TOOL_PATH: toolPath,
     DSH_E2E_SLOW_DELAY_MS: process.env.DSH_E2E_SLOW_DELAY_MS ?? '110',
+    ...(options.demo ? { DSH_E2E_DEMO: '1' } : {}),
   }
   const proc = spawn(dshBin(), [
     '--profile', 'e2e',
