@@ -28,7 +28,7 @@ import {
   type BtwTurn,
 } from '../shared'
 import { randomId } from '../random'
-import { openToolNames, type StreamCapture } from './parent-context'
+import { lastCompletedTurn, openToolNames, type StreamCapture } from './parent-context'
 import type { ChildGuard } from './tool-guard'
 import type { BtwStore } from './store'
 
@@ -245,7 +245,7 @@ export class BtwEngine {
         if (this.active.get(job.parentId) === job) this.active.delete(job.parentId)
         job.finish()
       })
-      return { topic, turn }
+      return { topic, turn, baselineTurn: lastCompletedTurn(input.parent.session) }
     } catch (error) {
       if (job.timer) clearTimeout(job.timer)
       this.active.delete(job.parentId)

@@ -79,7 +79,13 @@ export function apply(ctx: Context): void {
   const slots = ctx.slots as unknown as SlotRegistryLike
   ctx.effect(() => slots.inject('conversation.input.overlay', () => slots.register(
     { name: 'conversation.input.overlay', id: 'dsh-marginalia-bubbles', order: 25, locale: NS },
-    props => <BubbleLayer store={store} sessionId={String(props.sessionId)} />,
+    props => (
+      <BubbleLayer
+        store={store}
+        sessionId={String(props.sessionId)}
+        onInsert={text => props.inputActions?.setDraft(text)}
+      />
+    ),
   )))
 
   ctx.effect(() => slots.inject('conversation.input.left', () => slots.register(
@@ -118,6 +124,7 @@ function HistoryButton({ store, sessionId }: { readonly store: MarginaliaStore; 
     <button
       type="button"
       className="mgl-icon-button mgl-tool-button"
+      data-testid="marginalia-history-button"
       title={t('action.history')}
       aria-label={t('action.history')}
       onClick={() => { void store.openHistory(sessionId) }}

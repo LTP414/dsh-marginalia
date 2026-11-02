@@ -71,6 +71,18 @@ export class StreamCapture {
  * The fork cannot execute them and the side question must not either; the
  * prompt mentions them so the model knows they are still in flight.
  */
+export function lastCompletedTurn(session: { snapshotEvents?(): readonly EventLike[] } | undefined): number {
+  const events = session?.snapshotEvents?.()
+  if (!events?.length) return 0
+  let last = 0
+  for (const event of events) {
+    if (event.type !== 'turn/end') continue
+    const data = event.data as { turn?: unknown; reason?: { kind?: unknown } } | undefined
+    if (typeof data?.turn === 'number' && data.reason?.kind === 'completed') last = data.turn
+  }
+  return last
+}
+
 export function openToolNames(session: { snapshotEvents?(): readonly EventLike[] } | undefined, limit = 5): string[] {
   const events = session?.snapshotEvents?.()
   if (!events?.length) return []

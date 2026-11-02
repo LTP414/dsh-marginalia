@@ -42,7 +42,7 @@ function TurnBlock({
 }): React.JSX.Element {
   const running = turn.status === 'running'
   return (
-    <section className="mgl-turn" data-status={turn.status}>
+    <section className="mgl-turn" data-testid="marginalia-turn" data-status={turn.status}>
       <div className="mgl-turn-head">
         <span className="mgl-badge" data-status={turn.status}>
           {running && <span className="mgl-spinner" aria-hidden="true" />}
@@ -200,6 +200,7 @@ function HistoryBody({ store, history, t }: { readonly store: MarginaliaStore; r
                 key={topic.id}
                 type="button"
                 role="option"
+                data-testid="marginalia-topic"
                 aria-selected={history.selectedId === topic.id}
                 className={`mgl-topic${history.selectedId === topic.id ? ' is-selected' : ''}`}
                 onClick={() => { void store.selectTopic(topic.id) }}
@@ -312,7 +313,7 @@ export function HistoryOverlay({ store }: { readonly store: MarginaliaStore }): 
       data-dsh-marginalia-history=""
       onMouseDown={event => { if (event.target === event.currentTarget) store.closeHistory() }}
     >
-      <div className="mgl-panel" role="dialog" aria-modal="true" aria-label={t('history.title')}>
+      <div className="mgl-panel" data-testid="marginalia-history" role="dialog" aria-modal="true" aria-label={t('history.title')}>
         <HistoryBody store={store} history={history} t={t} />
       </div>
     </div>

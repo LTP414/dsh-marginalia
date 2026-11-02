@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { CheckIcon, ChevronIcon, CloseIcon, CopyIcon, HistoryIcon, MarginaliaIcon, SendIcon, StopIcon } from './Icons'
+import { CheckIcon, ChevronIcon, CloseIcon, CopyIcon, HistoryIcon, MarginaliaIcon, PlusIcon, SendIcon, StopIcon } from './Icons'
 import { MarginaliaMarkdown } from './Markdown'
 import type { Bubble, MarginaliaStore } from './store'
 import type { TranslateFn } from './locales'
@@ -15,10 +15,11 @@ function statusText(status: Bubble['status'], t: TranslateFn): string | undefine
   }
 }
 
-function BubbleCard({ store, bubble }: { readonly store: MarginaliaStore; readonly bubble: Bubble }): React.JSX.Element {
+function BubbleCard({ store, bubble, onInsert }: { readonly store: MarginaliaStore; readonly bubble: Bubble; readonly onInsert?: (text: string) => void }): React.JSX.Element {
   const t = store.t
   const [copied, setCopied] = useState(false)
   const [copyError, setCopyError] = useState(false)
+  const [inserted, setInserted] = useState(false)
   const [followOpen, setFollowOpen] = useState(false)
   const [draft, setDraft] = useState('')
   const [followError, setFollowError] = useState<string | undefined>()
@@ -70,7 +71,7 @@ function BubbleCard({ store, bubble }: { readonly store: MarginaliaStore; readon
   }
 
   return (
-    <article className="mgl-bubble" data-status={bubble.status} aria-label={t('bubble.aria')}>
+    <article className="mgl-bubble" data-testid="marginalia-bubble" data-status={bubble.status} aria-label={t('bubble.aria')}>
       <header className="mgl-head">
         <span className="mgl-mark"><MarginaliaIcon size={15} /></span>
         <span className="mgl-question" title={bubble.question}>{bubble.question}</span>
@@ -78,6 +79,22 @@ function BubbleCard({ store, bubble }: { readonly store: MarginaliaStore; readon
           {bubble.answer && (
             <button type="button" className="mgl-icon-button" title={copied ? t('action.copied') : t('action.copy')} aria-label={copied ? t('action.copied') : t('action.copy')} onClick={() => { void copy() }}>
               {copied ? <CheckIcon size={15} /> : <CopyIcon size={15} />}
+            </button>
+          )}
+          {bubble.answer && onInsert && (
+            <button
+              type="button"
+              className="mgl-icon-button"
+              data-testid="marginalia-insert"
+              title={inserted ? t('action.inserted') : t('action.insert')}
+              aria-label={inserted ? t('action.inserted') : t('action.insert')}
+              onClick={() => {
+                onInsert(bubble.answer)
+                setInserted(true)
+                setTimeout(() => setInserted(false), 1_500)
+              }}
+            >
+              {inserted ? <CheckIcon size={15} /> : <PlusIcon size={15} />}
             </button>
           )}
           {bubble.topicId !== null && !busy && (
@@ -121,7 +138,7 @@ function BubbleCard({ store, bubble }: { readonly store: MarginaliaStore; readon
             </div>
           )}
           {bubble.answer && (
-            <div className="mgl-answer">
+            <div className="mgl-answer" data-testid="marginalia-answer">
               <MarginaliaMarkdown text={bubble.answer} streaming={bubble.streaming} />
             </div>
           )}
@@ -161,7 +178,7 @@ function BubbleCard({ store, bubble }: { readonly store: MarginaliaStore; readon
 }
 
 /** Rendered at `conversation.input.overlay`; floats above the composer card. */
-export function BubbleLayer({ store, sessionId }: { readonly store: MarginaliaStore; readonly sessionId: string }): React.JSX.Element | null {
+export function BubbleLayer({ store, sessionId, onInsert }: { readonly store: MarginaliaStore; readonly sessionId: string; readonly onInsert?: (text: string) => void }): React.JSX.Element | null {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot)
   const bubbles = snapshot.bubbles
     .filter(bubble => bubble.sessionId === sessionId)
@@ -170,7 +187,7 @@ export function BubbleLayer({ store, sessionId }: { readonly store: MarginaliaSt
   if (bubbles.length === 0) return null
   return (
     <div className="mgl-layer" data-dsh-marginalia="">
-      {bubbles.map(bubble => <BubbleCard key={bubble.id} store={store} bubble={bubble} />)}
+      {bubbles.map(bubble => <BubbleCard key={bubble.id} store={store} bubble={bubble} onInsert={onInsert} />)}
     </div>
   )
 }

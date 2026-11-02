@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { hideInternalCommands, registerBtwCommands } from '../src/host/commands'
+import { hideInternalCommands, quietInternalCommands, registerBtwCommands } from '../src/host/commands'
 import { ASK_COMMAND, LIST_COMMAND } from '../src/shared'
 
 const TURN = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
@@ -52,6 +52,33 @@ function invocation(rawInput: string) {
     attachments: [],
   }
 }
+
+describe('quietInternalCommands', () => {
+  it('drops only the lifecycle pair of an internal command', () => {
+    const append = vi.fn()
+    const commands = {
+      list: (_agent: unknown) => [],
+      appendLifecycle: append,
+    }
+    const restore = quietInternalCommands(commands)
+    commands.appendLifecycle({}, 'command/run', { name: ASK_COMMAND, commandId: 'internal-1' })
+    commands.appendLifecycle({}, 'command/done', { commandId: 'internal-1' })
+    expect(append).not.toHaveBeenCalled()
+    commands.appendLifecycle({}, 'command/run', { name: 'other', commandId: 'other-1' })
+    commands.appendLifecycle({}, 'command/done', { commandId: 'other-1' })
+    expect(append).toHaveBeenCalledTimes(2)
+    restore()
+    commands.appendLifecycle({}, 'command/run', { name: ASK_COMMAND, commandId: 'internal-2' })
+    expect(append).toHaveBeenCalledTimes(3)
+  })
+
+  it('reports an unavailable lifecycle hook without failing', () => {
+    const unsupported = vi.fn()
+    const restore = quietInternalCommands({}, unsupported)
+    expect(unsupported).toHaveBeenCalledTimes(1)
+    expect(() => restore()).not.toThrow()
+  })
+})
 
 describe('registerBtwCommands', () => {
   it('registers hidden commands and returns JSON', async () => {

@@ -97,6 +97,7 @@ interface ChatSnapshotLike {
 
 interface NodeLike {
   readonly kind?: string
+  readonly turn?: number
   readonly blocks?: readonly AssistantBlockLike[]
   readonly message?: string
   readonly error?: string
@@ -407,7 +408,7 @@ export class MarginaliaStore {
         streaming: accepted.turn.status === 'running',
       })
       this.mergeTopic(accepted.topic)
-      this.watch(bubble.id, accepted.topic.id, accepted.turn.childSessionId ?? bubble.id)
+      this.watch(bubble.id, accepted.topic.id, accepted.turn.childSessionId ?? bubble.id, accepted.baselineTurn ?? 0)
     } catch (error) {
       this.pending.delete(bubble.id)
       if (controller.signal.aborted || this.cancelled.has(bubble.id)) return
@@ -420,7 +421,7 @@ export class MarginaliaStore {
     }
   }
 
-  private watch(bubbleId: string, topicId: string, childId: string): void {
+  private watch(bubbleId: string, topicId: string, childId: string, baselineTurn: number): void {
     const watcher: Watcher = { bubbleId, released: false, finalizing: false, finalizeAttempts: 0 }
     this.watchers.set(bubbleId, watcher)
     const sessions = this.options.sessions
@@ -452,20 +453,20 @@ export class MarginaliaStore {
       }
       watcher.ref = reference
       const session = reference.binding.session
-      watcher.offSession = session.subscribe(() => this.check(bubbleId, watcher, topicId, childId))
+      watcher.offSession = session.subscribe(() => this.check(bubbleId, watcher, topicId, childId, baselineTurn))
       try {
         const target = this.options.conversation?.binding(reference.binding as never).target('chat')
         if (target) {
-          watcher.offChat = target.subscribe(() => this.check(bubbleId, watcher, topicId, childId))
+          watcher.offChat = target.subscribe(() => this.check(bubbleId, watcher, topicId, childId, baselineTurn))
         }
       } catch (error) {
         this.log('marginalia: chat target unavailable; falling back to status polling.', error)
       }
-      this.check(bubbleId, watcher, topicId, childId)
+      this.check(bubbleId, watcher, topicId, childId, baselineTurn)
     })()
   }
 
-  private check(bubbleId: string, watcher: Watcher, topicId: string, childId: string): void {
+  private check(bubbleId: string, watcher: Watcher, topicId: string, childId: string, baselineTurn: number): void {
     if (watcher.released) return
     const bubble = this.findBubble(bubbleId)
     const reference = watcher.ref
@@ -476,7 +477,7 @@ export class MarginaliaStore {
     } catch {
       return
     }
-    const chat = this.readChat(reference)
+    const chat = this.readChat(reference, baselineTurn)
     if (chat.text && chat.text !== bubble.answer) {
       this.update(bubbleId, {
         answer: chat.text,
@@ -578,7 +579,7 @@ export class MarginaliaStore {
     this.releaseWatcher(bubbleId)
   }
 
-  private readChat(reference: SessionReferenceLike): { text: string; error?: string } {
+  private readChat(reference: SessionReferenceLike, baselineTurn: number): { text: string; error?: string } {
     const conversation = this.options.conversation
     if (!conversation) return { text: '' }
     let snapshot: ChatSnapshotLike | undefined
@@ -592,6 +593,9 @@ export class MarginaliaStore {
     const parts: string[] = []
     let error: string | undefined
     for (const node of nodes) {
+      // A fork inherits the parent's completed turns. Only nodes after the
+      // baseline belong to this side turn.
+      if (typeof node.turn === 'number' && node.turn <= baselineTurn) continue
       if (node.kind === 'assistant') {
         const text = textOf(node.blocks)
         if (text) parts.push(text)

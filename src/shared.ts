@@ -79,6 +79,8 @@ export interface AskRequest {
 export interface AskAccepted {
   readonly topic: BtwTopic
   readonly turn: BtwTurn
+  /** Last completed parent turn inherited by the fork; side nodes start after it. */
+  readonly baselineTurn: number
 }
 
 export interface ListRequest {

@@ -123,6 +123,49 @@ export function registerBtwCommands(ctx: Context, engine: BtwEngine): Array<() =
  * `find`/`execute` intact for the authenticated RPC. The wrapper is removed on
  * plugin unload, and a later wrapper installed by another plugin is preserved.
  */
+interface LifecycleSink {
+  appendLifecycle?(session: unknown, type: string, data: { name?: string; commandId?: string }): void
+}
+
+/**
+ * Keep the internal transport out of the session log as well as the slash
+ * directory. `commands.execute` logs a run/done pair around every handler; for
+ * Marginalia those pairs would add Chat nodes and copy the whole topic JSON of
+ * `btw-get` into `command/done`. Suppressing that pair keeps the authenticated
+ * RPC path (no new HTTP surface) without polluting the main transcript.
+ *
+ * This is an instance-level compatibility shim, like the directory filter. If a
+ * future DSH removes `appendLifecycle`, the plugin still works and logs the
+ * commands; the warning is emitted by the caller.
+ */
+export function quietInternalCommands(
+  commands: LifecycleSink,
+  onUnsupported?: () => void,
+): () => void {
+  const original = commands.appendLifecycle
+  if (typeof original !== 'function') {
+    onUnsupported?.()
+    return () => {}
+  }
+  const own = Object.getOwnPropertyDescriptor(commands, 'appendLifecycle')
+  const tracked = new Set<string>()
+  const quieted = function (this: unknown, session: unknown, type: string, data: { name?: string; commandId?: string }) {
+    if (type === 'command/run' && typeof data?.name === 'string' && (INTERNAL_COMMANDS as readonly string[]).includes(data.name)) {
+      if (typeof data.commandId === 'string') tracked.add(data.commandId)
+      if (tracked.size > 256) tracked.clear()
+      return
+    }
+    if (type === 'command/done' && typeof data?.commandId === 'string' && tracked.delete(data.commandId)) return
+    return original.call(this, session, type, data)
+  } as NonNullable<LifecycleSink['appendLifecycle']>
+  Object.defineProperty(commands, 'appendLifecycle', { configurable: true, writable: true, value: quieted })
+  return () => {
+    if (Object.getOwnPropertyDescriptor(commands, 'appendLifecycle')?.value !== quieted) return
+    if (own) Object.defineProperty(commands, 'appendLifecycle', own)
+    else Reflect.deleteProperty(commands, 'appendLifecycle')
+  }
+}
+
 export function hideInternalCommands(commands: { list: (agent: unknown) => readonly { name: string }[] }): () => void {
   const own = Object.getOwnPropertyDescriptor(commands, 'list')
   const original = commands.list

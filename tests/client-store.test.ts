@@ -15,7 +15,7 @@ async function waitFor(predicate: () => boolean, timeout = 2_000): Promise<void>
   }
 }
 
-function makeHarness(options: { readonly ask?: Bridge['call'] } = {}) {
+function makeHarness(options: { readonly ask?: Bridge['call']; readonly baselineTurn?: number } = {}) {
   const calls: Array<{ name: string; payload: unknown }> = []
   let topic: BtwTopic | undefined
   const sessionState = { running: true, openState: 'open', subagent: null as unknown }
@@ -24,7 +24,7 @@ function makeHarness(options: { readonly ask?: Bridge['call'] } = {}) {
   let chat: {
     legacy: {
       partial: { blocks: Array<{ kind: string; text?: string }> } | null
-      nodes: Array<{ kind: string; blocks?: Array<{ kind: string; text?: string }> }>
+      nodes: Array<{ kind: string; turn?: number; blocks?: Array<{ kind: string; text?: string }> }>
     }
   } = {
     legacy: {
@@ -80,7 +80,7 @@ function makeHarness(options: { readonly ask?: Bridge['call'] } = {}) {
           updatedAt: 1,
           turns: [turn],
         }
-        return { topic, turn }
+        return { topic, turn, baselineTurn: options.baselineTurn ?? 0 }
       }
       if (name === GET_COMMAND) {
         if (!topic) throw new Error('not found')
@@ -122,12 +122,16 @@ function makeHarness(options: { readonly ask?: Bridge['call'] } = {}) {
     }
     notifyChat()
   }
+  const setChatNodes = (nodes: Array<{ kind: string; turn?: number; blocks?: Array<{ kind: string; text?: string }> }>): void => {
+    chat = { legacy: { partial: null, nodes } }
+    notifyChat()
+  }
   const finishSession = (): void => {
     sessionState.running = false
     for (const listener of sessionListeners) listener()
   }
 
-  return { store, calls, refs, setChat, finishSession, sessionState, getTopic: () => topic }
+  return { store, calls, refs, setChat, setChatNodes, finishSession, sessionState, getTopic: () => topic }
 }
 
 describe('MarginaliaStore', () => {
@@ -144,6 +148,18 @@ describe('MarginaliaStore', () => {
     expect(bubble.answer).toBe('Final answer')
     expect(bubble.topicId).toBe(TOPIC_A)
     expect(h.refs[0]?.released).toBe(true)
+    await h.store.dispose()
+  })
+
+  it('does not show the parent turns inherited by the fork', async () => {
+    const h = makeHarness({ baselineTurn: 1 })
+    h.store.ask('parent-1', 'Side only?')
+    await waitFor(() => h.store.getSnapshot().bubbles[0]?.status === 'running')
+    h.setChatNodes([
+      { kind: 'assistant', turn: 1, blocks: [{ kind: 'text', text: 'Parent answer' }] },
+      { kind: 'assistant', turn: 2, blocks: [{ kind: 'text', text: 'Side answer' }] },
+    ])
+    expect(h.store.getSnapshot().bubbles[0]?.answer).toBe('Side answer')
     await h.store.dispose()
   })
 

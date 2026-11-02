@@ -16,7 +16,7 @@ import { BtwStore } from './host/store'
 import { ChildGuard } from './host/tool-guard'
 import { StreamCapture } from './host/parent-context'
 import { BtwEngine, type ChildHandle, type ChildResult, type ParentAgent, type StartChildRequest } from './host/engine'
-import { hideInternalCommands, registerBtwCommands } from './host/commands'
+import { hideInternalCommands, quietInternalCommands, registerBtwCommands } from './host/commands'
 import { PLUGIN_NAME } from './shared'
 
 export const name = PLUGIN_NAME
@@ -87,6 +87,9 @@ export async function apply(ctx: Context): Promise<void> {
   })
 
   const hide = hideInternalCommands(ctx.commands as unknown as { list: (agent: unknown) => readonly { name: string }[] })
+  const unquiet = quietInternalCommands(ctx.commands as never, () => {
+    log('dsh-marginalia: commands.appendLifecycle is unavailable; internal command lifecycle will be visible.')
+  })
   const commandDisposers = registerBtwCommands(ctx, engine)
 
   let disposed = false
@@ -97,6 +100,7 @@ export async function apply(ctx: Context): Promise<void> {
       try { dispose() } catch (error) { log('dsh-marginalia: command disposer failed.', error) }
     }
     hide()
+    unquiet()
     stopCreated()
     stopStream()
     return (async () => {
