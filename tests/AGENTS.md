@@ -20,7 +20,8 @@ npm run test:coverage    # v8 coverage, reports to coverage/
 | `random.test.ts` | `randomId` 的 `randomUUID`/`getRandomValues`/抛错/无 crypto fallback，v4 形状与唯一性 |
 | `tool-guard.test.ts` | `ChildGuard` owned-only deny、child-scope 只挂一次、release、失败容器 |
 | `store.test.ts` | Host `BtwStore`：parent 隔离、排序、按 key 串行、崩溃修复、memory fallback、删除 |
-| `engine.test.ts` | `BtwEngine`：early accept、prompt 内容、follow-up 重放、busy、cancel partial、timeout、archive hook、dispose interrupted |
+| `parent-context.test.ts` | `openTurnSnapshot`：第一轮 user task、tool call/result、注入上下文过滤、截断、闭合标签转义、无 open turn |
+| `engine.test.ts` | `BtwEngine`：early accept、prompt 内容（含第一轮 open-turn 快照）、follow-up 重放、busy、cancel partial、timeout、archive hook、dispose interrupted |
 | `commands.test.ts` | `hideInternalCommands`、`quietInternalCommands`、`registerBtwCommands` 的 JSON/错误结果 |
 | `host-wiring.test.ts` | 真实 `apply()` 与 fake Host services 的装配：命令注册、激活参数、guard、stream capture、完成落库、archive、清理 |
 | `client-store.test.ts` | Client 状态机：streaming、inherited turn 过滤、canonical finalize、Host rejection、本地 busy、history、dismiss-before-accept、cancel-before-accept、subagent |
@@ -52,7 +53,7 @@ npm run test:coverage    # v8 coverage, reports to coverage/
 - 不要用固定 `setTimeout(500)` 等待异步状态；用 `waitFor`/`expect.poll`。
 - 不要在测试里读写 `~/.dsh` 或真实 profile；用 fake context/table。
 - 改协议/限制时同步 `shared.test.ts`；改生命周期/清理时同步 `engine.test.ts`；改命令静默/隐藏时同步 `commands.test.ts` 与 `host-wiring.test.ts`。
-- 当前基线（0.2.0）：10 个文件、53 个测试。加测试后更新 README/`docs/verification.md` 中的数字。
+- 当前基线：11 个文件、58 个测试。加测试后更新 README/`docs/verification.md` 中的数字。
 
 ## 与 e2e 的分工
 

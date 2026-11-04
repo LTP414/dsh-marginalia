@@ -10,6 +10,8 @@ export const MAX_ANSWER_BYTES = 256 * 1024
 export const MAX_ERROR_CHARS = 400
 export const MAX_TITLE_CHARS = 80
 export const MAX_PARENT_PARTIAL_CHARS = 8_000
+/** Compact snapshot of the parent's still-open turn; this is new prompt text. */
+export const MAX_PARENT_PROGRESS_CHARS = 6_000
 export const MAX_TOPICS_PER_SESSION = 50
 export const MAX_TURNS_PER_TOPIC = 200
 export const MAX_ACTIVE_BTW = 4

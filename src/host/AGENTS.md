@@ -9,7 +9,7 @@
 | `engine.ts` | 任务生命周期：ask / startChild / settle / cancel / delete / dispose；并发、超时、取消、状态落库 |
 | `store.ts` | `storage.domain` 持久化；topic schema；内存 fallback；崩溃修复；按 key 串行写 |
 | `tool-guard.ts` | `ChildGuard`：预登记 child id；root + child-scope 执行期 deny |
-| `parent-context.ts` | `StreamCapture`（父/子 partial）+ `lastCompletedTurn` + `openToolNames` |
+| `parent-context.ts` | `StreamCapture`（父/子 partial）+ `lastCompletedTurn` + `openTurnSnapshot` / `openToolNames` |
 | `commands.ts` | 注册 `btw-ask/list/get/cancel/delete`；从 slash 目录隐藏；静默命令生命周期 |
 
 ## 一条 `/btw` 的 Host 时序
@@ -20,7 +20,7 @@ Client /btw-ask {turnId, question, topicId?, reference?, locale}
   one-active-per-parent / 全局并发 / tombstone 检查
   读取或创建 topic，推入 running turn，store.put
   预留 childId = turnId，ChildGuard.own(childId)
-  组装 prompt（历史 + 父 partial + open tools + reference）
+  组装 prompt（历史 + open-turn 快照 + 实时 partial + reference）
   ctx.subagents.startActivation({
     provider: 'fork',
     childId,
@@ -89,7 +89,8 @@ Client /btw-ask {turnId, question, topicId?, reference?, locale}
   - 最多跟踪 64 个 session，按 LRU 淘汰。
 - `partialOf(sessionId)` 返回 trim 后非空文本。
 - `lastCompletedTurn(session)`：扫描 `turn/end` 且 `reason.kind === 'completed'`，返回最大 turn；用于 fork baseline。
-- `openToolNames(session)`：扫描最近 4000 个事件，返回已 `tool/call` 未 `tool/result` 的工具名（最多 5 个），写进 `<parent-in-progress>`。
+- `openTurnSnapshot(session)`：从最后一个 `turn/end` 之后取当前 open turn，输出当前 user request、最新 assistant 文本、最近 3 个工具调用/结果和 step；上限 `MAX_PARENT_PROGRESS_CHARS`（6k），不包含已完成轮次、时间戳或随机 ID。直接 user message 才计入任务，注入的 runtime/AGENTS 上下文跳过。
+- `openToolNames(session)`：仅在快照没有可读事件时兜底，返回已 `tool/call` 未 `tool/result` 的工具名（最多 5 个）。
 
 ## `commands.ts`
 
@@ -108,7 +109,7 @@ Client /btw-ask {turnId, question, topicId?, reference?, locale}
 - 改并发/超时/状态：`engine.ts` + `tests/engine.test.ts`；同步 `AGENTS.md` 与验证文档。
 - 改存储/schema/修复：`store.ts` + `tests/store.test.ts`；注意 version bump 与旧记录兼容。
 - 改只读保护：`tool-guard.ts` + `tests/tool-guard.test.ts` + e2e `btw.spec.ts` 的 `[tool]` 场景；绝不能改为提示词约束。
-- 改 prompt 输入（partial/history/open tools）：`parent-context.ts` / `shared.ts` + `tests/shared.test.ts` / `tests/engine.test.ts`。
+- 改 prompt 输入（open-turn 快照/partial/history/open tools）：`parent-context.ts` / `shared.ts` + `tests/parent-context.test.ts` / `tests/shared.test.ts` / `tests/engine.test.ts`。
 - 改命令传输/隐藏/静默：`commands.ts` + `tests/commands.test.ts` + `tests/host-wiring.test.ts` + e2e 主 transcript 节点数断言。
 
 ## 已知脆弱点

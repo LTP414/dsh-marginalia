@@ -40,6 +40,23 @@ test('shows /btw in the slash menu, streams, and leaves the main transcript unto
   await expect(chatFlowText(page)).not.toContainText('[slow] Explain the margin')
 })
 
+test('a first-turn /btw sees the task while the main turn is still running', async ({ page }) => {
+  const input = composer(page)
+  await input.click()
+  await input.fill('[hold] Ship the release checklist')
+  await input.press('Enter')
+  await expect(chatFlowText(page)).toContainText('Ship the release checklist')
+
+  const bubble = await askSide(page, '[context] What is the current task?')
+  await waitForBubbleStatus(bubble, 'complete')
+  const answer = bubbleAnswer(bubble)
+  await expect(answer).toContainText('Ship the release checklist')
+  await expect(answer).not.toContainText('No current work context')
+
+  // The main turn is still allowed to finish; the side question did not stop it.
+  await expect(chatFlowText(page)).toContainText('Main answer accepted', { timeout: 15_000 })
+})
+
 test('Stop keeps the partial answer and the history row is Cancelled', async ({ page }) => {
   await seedMain(page)
   const bubble = await askSide(page, '[slow] Stop this answer')

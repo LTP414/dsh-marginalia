@@ -28,7 +28,7 @@ import {
   type BtwTurn,
 } from '../shared'
 import { randomId } from '../random'
-import { lastCompletedTurn, openToolNames, type StreamCapture } from './parent-context'
+import { lastCompletedTurn, openToolNames, openTurnSnapshot, type StreamCapture } from './parent-context'
 import type { ChildGuard } from './tool-guard'
 import type { BtwStore } from './store'
 
@@ -215,11 +215,19 @@ export class BtwEngine {
 
     try {
       const parentPartial = this.options.capture.partialOf(input.parent.id)
-      const openTools = input.parent.status === 'running' ? openToolNames(input.parent.session) : []
+      // Read the open turn even if status is momentarily idle between steps;
+      // the last turn/end boundary is the real discriminator.
+      const parentProgress = openTurnSnapshot(input.parent.session)
+      // The compact snapshot already names open tools. Only fall back to the
+      // old name-only capture when there are no open-turn events to summarize.
+      const openTools = input.parent.status === 'running' && parentProgress === undefined
+        ? openToolNames(input.parent.session)
+        : []
       const prompt = buildPrompt({
         question: input.question,
         ...(input.reference === undefined ? {} : { reference: input.reference }),
         history,
+        ...(parentProgress === undefined ? {} : { parentProgress }),
         ...(parentPartial === undefined ? {} : { parentPartial }),
         ...(openTools.length === 0 ? {} : { parentOpenTools: openTools }),
         locale: input.locale,

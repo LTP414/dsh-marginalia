@@ -16,8 +16,9 @@ This is a DSH Host + Web Client bundle that implements the practical form of tha
   prompt, the same tool catalog, and the same completed history.
 - **Read-only, enforced** — the inherited tools remain in the request to preserve the prompt
   prefix, but an execution-time guard rejects every tool call. This is not a prompt request.
-- **Visible in-flight context** — if the main answer is still streaming when you ask, the captured
-  partial text is added to the side prompt as reference-only material.
+- **Visible in-flight context** — while the main turn is running, the side prompt gets a compact,
+  capped snapshot of the current user request, recent tool calls/results, and the live assistant
+  partial. This is what makes first-turn `/btw` useful even before `turn/end`.
 - **Topics and history** — every question is persisted with its status and answer; follow-ups
   replay the topic and see the parent conversation as it is *now*.
 - **Streaming and cancellation** — the Web Client retains the child session, renders its partial
@@ -54,12 +55,26 @@ isolated Host and a deterministic demo model, not by hand-editing the UI.
 
 ## Install
 
-From this checkout:
+### Into a DSH profile
+
+```bash
+dsh plugin --profile web add github:LTP414/dsh-marginalia
+```
+
+A git-hosted install builds the bundle once; DSH asks you to approve that build script
+(`allowBuilds`) before it runs. Once the npm release matches this checkout, the same command works
+with the prebuilt package and skips that step:
+
+```bash
+dsh plugin --profile web add dsh-marginalia
+```
+
+### From this checkout
 
 ```bash
 npm install
-npm run check          # typecheck + 53 unit tests + build + smoke
-npm run test:e2e       # 16 browser tests across Chromium/Firefox + dark projects
+npm run check          # typecheck + 58 unit tests + build + smoke
+npm run test:e2e       # 18 browser tests across Chromium/Firefox + dark projects
 ```
 
 Then install the workspace directory as a bundle through the Harness plugin manager, or add it to
@@ -155,9 +170,11 @@ combination.
   `<btw-history>` section. Role-level replay would require a direct LLM call and would lose the
   fork's system/tools/cache inheritance.
 - **Prompt cache is preserved, not guaranteed.** Marginalia never changes system/tools/messages;
-  whether a provider reuses the prefix remains the provider's decision.
-- **Parent partial is best-effort.** If the stream capture is unavailable, the section is omitted
-  rather than fabricated.
+  the completed-turn prefix can be reused, but the current open-turn snapshot is new text, so it is
+  necessarily outside that cache. Whether a provider reuses the prefix remains its decision.
+- **Open-turn context is best-effort and snapshot-based.** Fork cannot seed an unbalanced turn, so
+  Marginalia injects the current task/tool/partial snapshot itself. It is capped, taken when you
+  ask, and may be stale if the main turn advances while the side answer is generated.
 - **Archive is best-effort.** A failed archive is logged; the side history is still correct.
 - **Transport is still command RPC.** The lifecycle shim removes transcript/log pollution, but the
   internal commands remain directly callable by an authorized RPC client. A generated Remote
@@ -172,12 +189,13 @@ combination.
 The browser suite starts a **separate** `DSH_HOME` and custom profile per worker, authenticates
 through the real launch-token exchange, seeds a workspace, and runs a deterministic fake LLM that
 streams tokens, aborts, and forces a tool call. It binds a non-loopback HTTP address by default so
-the insecure-context UUID path is exercised for real. Chromium and Firefox run the core seven
+the insecure-context UUID path is exercised for real. Chromium and Firefox run the core eight
 specs; both browsers also run a dark-theme history regression against the real `ui-theme` setting.
 
 Covered specs: slash menu claim, token-level growth, Stop with partial history, follow-up topic,
 reload persistence, read-only tool denial with an untouched file, insert-to-composer, a plain-HTTP
-origin with `crypto.randomUUID === undefined`, and dark-theme history button/layout behavior.
+origin with `crypto.randomUUID === undefined`, first-turn context while the main turn is running,
+and dark-theme history button/layout behavior.
 
 See [`docs/e2e.md`](docs/e2e.md). Real-preset acceptance stays out of the deterministic suite:
 

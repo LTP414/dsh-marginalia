@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- First-turn `/btw` now works while the main turn is still running. The Host reads the open turn's
+  events and appends a compact `<parent-in-progress>` snapshot (current user request, recent tool
+  calls/results, latest assistant text, and step) to the fork's single user prompt. The 6k-character
+  cap keeps the extra tokens bounded; the completed-turn prefix still starts with the same
+  system/tools and can reuse the provider cache.
+- Add unit coverage for the snapshot boundary/truncation/escaping and a Chromium/Firefox e2e that
+  asks a first-turn question before the main `turn/end`.
+
 ## 0.2.1 — 2026-11-03
 
 - Fix DSH dark-theme history panel: the send labels were white on a near-white

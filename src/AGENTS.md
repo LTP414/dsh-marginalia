@@ -37,7 +37,7 @@ src/
 - 数据类型：`BtwStatus`、`BtwTurn`、`BtwTopic`、`BtwTopicSummary`、`AskRequest/AskAccepted`、`List/Get/Cancel/Delete` 请求响应。
 - 校验：`parseAskRequest`、`parseListRequest`、`parseGetRequest`、`parseCancelRequest`、`parseDeleteRequest`、`isUuid`、`isBtwLocale`；错误统一为 `BtwRequestError`。
 - 传输：`commandLine(name, payload)` 生成 `/btw-ask {...}` 形式的隐藏命令。
-- prompt：`buildPrompt` 生成单条 user prompt，包含 `<btw>` 指令、`<btw-history>`、`<parent-in-progress>`、`<quoted-context>`、`Question:`。**不要把这段放进 system prompt，也不要改工具表。**
+- prompt：`buildPrompt` 生成单条 user prompt，包含 `<btw>` 指令、`<btw-history>`、`<parent-in-progress>`（open-turn 快照 + 实时 partial）、`<quoted-context>`、`Question:`。**不要把这段放进 system prompt，也不要改工具表。**
 - 历史：`formatHistory` 按上限从最新轮次回放，单块超长截断；`lastCompletedTurn` 的实现不在本文件，在 `host/parent-context.ts`。
 - 清洗：`sanitizeAnswer`（去 tool-call 伪影、控制字符、按 UTF-8 截断）、`sanitizeError`（单行、去路径/密钥）、`truncateUtf8`、`summarizeTopic`、`titleOf`。
 - 常量导出 `LIMITS` 供文档/测试使用；真正的数值在 `limits.ts`。
@@ -47,7 +47,7 @@ src/
 所有跨 Host/Client/测试共享的硬上限；改数值会影响 prompt、校验、UI 和测试。当前包括：
 
 - `MAX_QUESTION_LENGTH` 8k、`MAX_REFERENCE_LENGTH` 8k、`MAX_HISTORY_CHARS` 64k、`MAX_ANSWER_BYTES` 256 KiB。
-- `MAX_TOPICS_PER_SESSION` 50、`MAX_TURNS_PER_TOPIC` 200、`MAX_ACTIVE_BTW` 4、`DEFAULT_TIMEOUT_MS` 10 分钟、`CLEANUP_TIMEOUT_MS` 5s、`MAX_SIDE_OUTPUT_TOKENS` 32k。
+- `MAX_TOPICS_PER_SESSION` 50、`MAX_TURNS_PER_TOPIC` 200、`MAX_ACTIVE_BTW` 4、`DEFAULT_TIMEOUT_MS` 10 分钟、`CLEANUP_TIMEOUT_MS` 5s、`MAX_SIDE_OUTPUT_TOKENS` 32k、`MAX_PARENT_PROGRESS_CHARS` 6k。
 - 改上限时同步检查 `shared.ts` 的校验、`host/engine.ts` 的任务控制、`client/store.ts` 的输入校验和 `tests/shared.test.ts`。
 
 ### `src/random.ts`

@@ -10,7 +10,7 @@
 
 ## 项目定位
 
-- `/btw <question>`：fork 当前主会话，继承同一 system prompt、工具表与已完成历史；旁问子会话不执行任何工具。
+- `/btw <question>`：fork 当前主会话，继承同一 system prompt、工具表与已完成历史；open turn 的当前任务/工具/partial 由 Host 快照补齐，旁问子会话不执行任何工具。
 - 主题历史：问题/回答/状态持久化到 `storage.domain`，支持追问、停止、重试、删除。
 - Web UI：`conversation.input.overlay` 气泡、`shell.overlay` 历史面板、`conversation.input.left` 入口；流式、取消保留 partial、插入输入框。
 - 传输：隐藏的已鉴权 command RPC；生命周期日志已静默，避免污染主记录。
@@ -22,6 +22,7 @@
 3. 不写主 transcript；旁问历史放 sidecar domain。
 4. fork 会继承父会话已完成轮次，Client 必须用 `baselineTurn` 过滤，不能把父回答显示进气泡。
 5. 浏览器测试使用隔离 `DSH_HOME`，绝不碰用户的 `web` profile。
+6. fork 只到最后一个 `turn/end`；第一轮/当前轮必须由 `openTurnSnapshot` 注入 `<parent-in-progress>`，不要改 seed 或把 open turn 伪造成已完成轮次。
 
 ## 目录导航
 
@@ -69,9 +70,9 @@
 ## 常用命令
 
 ```bash
-npm run check          # typecheck + 53 unit tests + build + built-artifact smoke
+npm run check          # typecheck + 58 unit tests + build + built-artifact smoke
 npm run test:coverage  # unit suite with coverage
-npm run test:e2e       # Chromium + Firefox + dark projects; 16 passed, 2 nightly skipped
+npm run test:e2e       # Chromium + Firefox + dark projects; 18 passed, 2 nightly skipped
 npm run test:e2e:real  # nightly only: DSH_E2E_REAL=1 + DEEPSEEK_API_KEY
 ```
 

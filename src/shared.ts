@@ -11,6 +11,7 @@ import {
   MAX_ERROR_CHARS,
   MAX_HISTORY_CHARS,
   MAX_PARENT_PARTIAL_CHARS,
+  MAX_PARENT_PROGRESS_CHARS,
   MAX_PROMPT_BYTES,
   MAX_QUESTION_LENGTH,
   MAX_REFERENCE_LENGTH,
@@ -234,6 +235,7 @@ export interface OpenPromptInput {
   readonly reference?: string
   readonly history?: readonly BtwTurn[]
   readonly parentPartial?: string
+  readonly parentProgress?: string
   readonly parentOpenTools?: readonly string[]
   readonly locale?: BtwLocale
 }
@@ -288,7 +290,11 @@ export function formatHistory(history: readonly BtwTurn[]): string {
  */
 export function buildPrompt(input: OpenPromptInput): string {
   const history = formatHistory(input.history ?? [])
-  const partial = (input.parentPartial ?? '').slice(0, MAX_PARENT_PARTIAL_CHARS).trim()
+  const escapeClosing = (value: string): string => value
+    .replaceAll('</parent-in-progress>', '&lt;/parent-in-progress&gt;')
+    .replaceAll('</btw>', '&lt;/btw&gt;')
+  const partial = escapeClosing((input.parentPartial ?? '').slice(0, MAX_PARENT_PARTIAL_CHARS).trim())
+  const progress = escapeClosing((input.parentProgress ?? '').slice(0, MAX_PARENT_PROGRESS_CHARS).trim())
   const tools = (input.parentOpenTools ?? []).filter(Boolean).slice(0, 5)
   const reference = input.reference
 
@@ -310,9 +316,10 @@ export function buildPrompt(input: OpenPromptInput): string {
   if (history) {
     parts.push('', '<btw-history>', history, '</btw-history>')
   }
-  if (partial || tools.length > 0) {
+  if (progress || partial || tools.length > 0) {
     parts.push('', '<parent-in-progress>')
-    if (partial) parts.push(partial)
+    if (progress) parts.push(progress)
+    if (partial) parts.push('', 'Live assistant partial:', partial)
     if (tools.length > 0) {
       parts.push(`The main session is currently running: ${tools.join(', ')}`)
     }

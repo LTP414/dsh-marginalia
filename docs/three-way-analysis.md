@@ -73,7 +73,7 @@
 
 - **没有流式 token**。`SideJobs.ask()` 等子代理完整结果，Client 只看到 spinner；这不是 oh-my-pi 的逐 token 面板。
 - **没有历史**。README 明确：刷新后气泡不恢复，每次旁问独立；没有 topic/follow-up/branch。
-- **fork 只到最后一个 `turn/end`**。DSH 的 fork provider 明确排除 in-flight turn，所以 oh-my-pi 的 C2（半截回答）做不到；它只能看到已完成内容。
+- **fork 只到最后一个 `turn/end`**。DSH 的 fork provider 明确排除 in-flight turn；本项目在 fork 之外读取 open turn 事件，把当前任务、最近工具调用/结果和 partial 作为 `<parent-in-progress>` 快照注入，因此 C2 可以做到“当前任务 + 半截回答”，但快照在提问时采样，不是实时共享。
 - **子代理 session 可能留下记录**。代码里 `activation.dispose()` 没有显式 `archiveSession`；是否落盘取决于 `sessionPersistence`。UI 不显示历史，但 host 侧可能累积 subagent session/catalog 记录。这是“伪 ephemeral”。
 - **`send_message` 例外是双刃剑**。提示词要求“用户明确要求才发回”，但模型有实际工具权限；一旦判断错，就会写主对话。oh-my-pi 是绝不写。
 - **Client 端 monkey-patch 了官方 `commandUi`**：`candidates/dispatch/matchSpace/matchEnter/execute` 全部被替换（[src/client/index.tsx:45](/home/kali/Dev/dsh-test/refs/MichengAI_dsh-btw/src/client/index.tsx:45)）。这是为了把 `/btw` 从“命令”变成“自定义气泡”，但版本升级时最容易坏。
@@ -427,9 +427,15 @@ User: ...
 Assistant: ...
 </btw-history>
 
-[Optional, if the parent turn is still streaming:]
+[Optional, when the parent turn is still open:]
 <parent-in-progress>
-...partial assistant text captured when /btw was invoked...
+Current step: turn 2, step 1 (still running).
+Current user request:
+...
+Recent tool activity:
+- bash(command=...) → ok: ...
+Live assistant partial:
+...text captured when /btw was invoked...
 </parent-in-progress>
 
 Question:
@@ -575,7 +581,7 @@ Question:
 | oh-my-pi 行为 | DSH 约束 | 建议降级 |
 | --- | --- | --- |
 | 真 ephemeral side turn，不产生 session | DSH 的 fork 子代理是 durable subagent；没有 ephemeral fork | 用完 archive（需验证 subagent child 可 archive）；历史放 sidecar；文档写明不是零痕迹 |
-| 上下文包含 in-flight assistant 文本 | fork seed 只到最后一个 `turn/end` | 从 `agent/assistant-stream` 取文本，作为 `<parent-in-progress>` 注入；拿不到就省略 |
+| 上下文包含当前 open turn（任务/工具/半截回答） | fork seed 只到最后一个 `turn/end` | 读取 open turn 事件 + `agent/assistant-stream`，压缩成 `<parent-in-progress>`；6k 上限，提问时快照，拿不到就省略 |
 | follow-up 以独立 user/assistant 消息重放 | 子代理只能接收一条 user prompt，不能注入 assistant | v1 把历史压成 `<btw-history>` 文本；若必须 role 级重放，只能走 direct LLM（会丢 cache/系统提示/工具） |
 | branch `b` 提升答案 | 没有公开的 assistant 注入/branch API；`sessions.fork` 不是这个语义 | 不做 branch；提供“插入输入框”/显式回传 |
 | focused subagent 作为被问会话 | `/btw` 在 subagent 视图的可用性取决于宿主命令/trigger | 先只支持顶层 session；或显式检测并拒绝 |

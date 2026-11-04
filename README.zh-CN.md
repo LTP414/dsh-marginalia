@@ -12,7 +12,7 @@
 
 - **同一场对话**：旁问 fork 当前会话，继承同一系统提示、同一工具表、同一已完成历史。
 - **执行期只读**：工具定义保留在请求里以保护 prompt 前缀，但执行期 guard 拒绝所有工具调用；这不是提示词约束。
-- **看得到半截回答**：主回答仍在流式生成时发起 `/btw`，已捕获的 partial 文本会作为参考注入旁问。
+- **看得到进行中的上下文**：主回合仍在运行时，旁问会收到当前用户任务、最近工具调用/结果和实时 partial 的紧凑快照；第一轮还没有 `turn/end` 也能用。
 - **主题与历史**：每问持久化状态与回答；追问会重放该主题，并看到**当前**主会话，而不是打开面板时的冻结快照。
 - **流式与取消**：Web Client retain 子会话并渲染 partial；停止时保留已生成内容。
 - **不伪造 branch**：DSH 没有公开的 assistant 注入／分支 API；提供“插入输入框”作为安全替代。
@@ -43,10 +43,25 @@
 
 ## 安装与构建
 
+### 安装到 DSH Profile
+
+```bash
+dsh plugin --profile web add github:LTP414/dsh-marginalia
+```
+
+从 Git 托管源安装时会在本地构建一次，DSH 会先请求你批准该包的构建脚本（`allowBuilds`）。等 npm
+上的版本与本仓库一致后，也可以用预构建包安装，跳过这一步：
+
+```bash
+dsh plugin --profile web add dsh-marginalia
+```
+
+### 从当前 checkout 构建
+
 ```bash
 npm install
-npm run check          # 类型检查 + 53 个单测 + 构建 + 冒烟
-npm run test:e2e       # Chromium + Firefox + 深色项目；16 passed，2 个 nightly skip
+npm run check          # 类型检查 + 58 个单测 + 构建 + 冒烟
+npm run test:e2e       # Chromium + Firefox + 深色项目；18 passed，2 个 nightly skip
 ```
 
 然后用 Harness 的插件管理器安装当前目录，或在 bundle composition 中加入：
@@ -117,8 +132,8 @@ Web UI 在 Chromium 与 Firefox 中都有真实浏览器覆盖。深色历史回
 - **不是真 ephemeral**：本地 fork 会产生 durable 子会话；Workspace registry 可用时完成后尽力 archive，但 Host 无法真正“忘记”它。历史本身在 sidecar domain。
 - **不做 branch**：DSH 没有公开 assistant 注入/分支 API，不伪造 oh-my-pi 的 `b`。
 - **历史以文本重放**：子代理只能接收一条 user prompt，因此历史放进 `<btw-history>`。要做 role 级重放只能走 direct LLM，会失去系统提示/工具/缓存继承。
-- **保护前缀，不承诺命中缓存**：Marginalia 不主动改 system/tools/messages，是否命中由 provider 决定。
-- **父会话 partial 是尽力而为**：拿不到就省略，不伪造。
+- **保护前缀，不承诺命中缓存**：Marginalia 不主动改 system/tools/messages；已完成轮次前缀可复用，但当前 open-turn 快照是新文本，必然不在那段缓存里。是否命中由 provider 决定。
+- **进行中上下文是尽力而为的快照**：fork 不能 seed 未闭合 turn，所以 Marginalia 自己注入当前任务/工具/partial。它有长度上限、在提问时采样，主回合继续推进后可能已经过时。
 - **archive 是尽力而为**：失败会记日志，旁问历史不受影响。
 - **传输仍是 command RPC**：生命周期垫片消除了日志/记录污染，但内部命令仍可被已授权 RPC 客户端直接调用；原生 Remote 尚未实现。
 - **子代理视图未纳入浏览器套件**：单测覆盖拒绝与隐藏工具栏；真实 GUI 中进入委托子代理视图未自动化。
@@ -126,9 +141,9 @@ Web UI 在 Chromium 与 Firefox 中都有真实浏览器覆盖。深色历史回
 
 ## 端到端验证
 
-浏览器套件为每个 worker 启动**独立** `DSH_HOME` 与自定义 profile，通过真实 launch-token 换取 cookie，预置 workspace，并用可控 fake LLM 逐 token 输出、abort、强制工具调用。默认绑定非 loopback HTTP 地址，因此真正覆盖非安全上下文的 UUID 路径。Chromium 与 Firefox 都跑核心 7 条 spec；两者还会用真实 `ui-theme` 设置跑深色历史回归。
+浏览器套件为每个 worker 启动**独立** `DSH_HOME` 与自定义 profile，通过真实 launch-token 换取 cookie，预置 workspace，并用可控 fake LLM 逐 token 输出、abort、强制工具调用。默认绑定非 loopback HTTP 地址，因此真正覆盖非安全上下文的 UUID 路径。Chromium 与 Firefox 都跑核心 8 条 spec；两者还会用真实 `ui-theme` 设置跑深色历史回归。
 
-覆盖：slash 菜单 claim、逐 token 增长、Stop 保留 partial + 历史 Cancelled、同主题追问、刷新恢复、只读工具拒绝且文件未变、插入输入框、`crypto.randomUUID === undefined` 的纯 HTTP 场景，以及深色模式下历史按钮对比度/固定追问框布局。
+覆盖：slash 菜单 claim、逐 token 增长、Stop 保留 partial + 历史 Cancelled、同主题追问、刷新恢复、只读工具拒绝且文件未变、插入输入框、`crypto.randomUUID === undefined` 的纯 HTTP 场景，第一轮主回合运行中发起 `/btw` 的上下文可见性，以及深色模式下历史按钮对比度/固定追问框布局。
 
 详见 [`docs/e2e.md`](docs/e2e.md)。真实模型验收不在确定性套件里：
 

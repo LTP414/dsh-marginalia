@@ -2,19 +2,20 @@
 
 本目录只放 Playwright `test()`。共享 fixture 在 `../fixtures/dsh.ts`，Host/UI helper 在 `../support/`。
 
-## `btw.spec.ts`（7 条，默认运行）
+## `btw.spec.ts`（8 条，默认运行）
 
 `test.beforeEach` 调 `openApp(page, host)`；每个 test 使用新的 browser context，默认打开当前 workspace 的空白 session。不要依赖前一个 test 的 session/bubble。
 
-| 行 | 场景 | 关键断言 |
-| --- | --- | --- |
-| 21 | slash menu + 流式 + 主记录不变 | `[data-testid=marginalia-bubble]` 出现；answer 长度用 `expect.poll` 增长；不包含父回答；`[data-chat-node-key]` 数量不变；`chatFlow` 不包含侧问题；`archivedChild()` 为 true |
-| 42 | Stop + 历史 | 运行中 Stop；`data-status=cancelled`；answer 保留 partial；历史面板包含 `Cancelled` 与 partial |
-| 63 | Follow-up | 第一条 complete；点 Follow up；textarea 输入 `And then?` Enter；出现第二个 bubble；历史显示 `2 turns` |
-| 84 | Reload | 完成后 reload + `resumeApp`；无气泡重建；seed 文本仍在；历史仍有答案 |
-| 101 | 只读 guard | `[tool]` 触发 fake bash；bubble 文本含 `read-only guard blocked`；`host.toolPath` 不存在；节点数不变 |
-| 113 | 插入输入框 | 点 `marginalia-insert`；composer 含 answer；主节点数不变 |
-| 124 | 非 secure origin | `host.insecure` 才运行；`typeof crypto.randomUUID === 'undefined'`；仍能完成 `/btw` |
+| 场景 | 关键断言 |
+| --- | --- |
+| slash menu + 流式 + 主记录不变 | `[data-testid=marginalia-bubble]` 出现；answer 长度用 `expect.poll` 增长；不包含父回答；`[data-chat-node-key]` 数量不变；`chatFlow` 不包含侧问题；`archivedChild()` 为 true |
+| 第一轮进行中 | 主回合用 `[hold]` 保持运行；`/btw` 的 prompt 含当前 user task；回答引用该 task；主回合仍能完成 |
+| Stop + 历史 | 运行中 Stop；`data-status=cancelled`；answer 保留 partial；历史面板包含 `Cancelled` 与 partial |
+| Follow-up | 第一条 complete；点 Follow up；textarea 输入 `And then?` Enter；出现第二个 bubble；历史显示 `2 turns` |
+| Reload | 完成后 reload + `resumeApp`；无气泡重建；seed 文本仍在；历史仍有答案 |
+| 只读 guard | `[tool]` 触发 fake bash；bubble 文本含 `read-only guard blocked`；`host.toolPath` 不存在；节点数不变 |
+| 插入输入框 | 点 `marginalia-insert`；composer 含 answer；主节点数不变 |
+| 非 secure origin | `host.insecure` 才运行；`typeof crypto.randomUUID === 'undefined'`；仍能完成 `/btw` |
 
 ### fake prompt 标记
 
@@ -22,6 +23,8 @@ fake LLM 由问题文本决定行为（详见 `../fixtures/fake-llm/AGENTS.md`�
 
 - `[slow]`：110ms/token，用于流式/Stop。
 - `[tool]`：子会话发起 `bash touch <DSH_E2E_TOOL_PATH>`，用于 guard。
+- `[hold]`：主回合等待 4s 再回答，用于第一轮进行中发起 `/btw`。
+- `[context]`：旁问把收到的 `<parent-in-progress>` 回显到答案，用于断言快照已注入。
 - 其他：立即返回 `Side answer: <question>`。
 
 ### 归档断言

@@ -59,6 +59,8 @@ the non-secure spec then skips.
 
 - `listModels` / `resolveModel` advertise `fake/fake-1` so the GUI model picker accepts it.
 - Tokens are emitted as real `text-delta` chunks. `[slow]` selects a 110 ms inter-token delay.
+- `[hold]` delays the main first-turn answer so `/btw` can run before `turn/end`.
+- `[context]` echoes the received `<parent-in-progress>` block, proving the open-turn snapshot reached the child.
 - `[tool]` emits a real `bash touch <path>` tool-call block; the Host's execution guard must deny
   it and the test asserts the file does not exist.
 - A tool-result step is answered with the guard message.
@@ -79,6 +81,7 @@ domain record before launch. The GUI opens the workspace with a blank session. T
 | Spec | Proves |
 | --- | --- |
 | `/btw` menu + streaming | candidate appears in the real slash menu; claim works; answer length grows; inherited parent turns are not shown; main Chat node count is unchanged |
+| First-turn context | while the main first turn is still running, `/btw` receives the current user task in `<parent-in-progress>` and answers from it |
 | Stop + history | Stop preserves partial text; history status is Cancelled; the partial survives into the history panel |
 | Follow-up | a second turn lands in the same topic and history shows 2 turns |
 | Reload | the same session restores; history still has the answer; no bubble is recreated or resent |
@@ -129,7 +132,7 @@ Four projects:
 | `chromium-dark` | `history-theme.spec.ts` | DSH dark (`ui-theme.preference=dark`) |
 | `firefox-dark` | `history-theme.spec.ts` | DSH dark |
 
-The full matrix is **16 passed + 2 skipped** (the real-provider spec in the two light projects).
+The full matrix is **18 passed + 2 skipped** (the real-provider spec in the two light projects).
 The theme is not simulated with `colorScheme`; the fixture writes the real `ui-theme` profile patch.
 The dark regression asserts button label contrast (the old white-on-white `brand-primary` fill),
 opacity 1 for disabled buttons, an opaque panel, a scrolling turn list, and a follow-up form that

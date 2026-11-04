@@ -39,6 +39,13 @@ function lastUserText(messages) {
   return ''
 }
 
+function allUserText(messages) {
+  return messages
+    .filter(message => message?.role === 'user')
+    .map(message => textOf(message))
+    .join('\n')
+}
+
 function sideQuestion(text) {
   const match = /Question:\n([\s\S]*?)\n<\/btw>/.exec(text)
   return match?.[1]?.trim() ?? ''
@@ -146,6 +153,20 @@ const adapter = {
     }
 
     if (question) {
+      if (question.includes('[context]')) {
+        const full = messages
+          .filter(message => message?.role === 'user')
+          .map(message => textOf(message))
+          .find(text => text.includes('<btw>')) ?? ''
+        const match = /\n<parent-in-progress>\n([\s\S]*?)<\/parent-in-progress>/.exec(full)
+        const progress = match?.[1]?.replace(/\s+/g, ' ').trim().slice(0, 600)
+        yield* streamText(
+          progress ? `I can see the current work: ${progress}` : 'No current work context was provided.',
+          options.signal,
+          0,
+        )
+        return
+      }
       if (question.includes('[tool]')) {
         yield* streamToolCall(options.signal)
         return
@@ -174,6 +195,9 @@ const adapter = {
       return
     }
 
+    if (allUserText(messages).includes('[hold]')) {
+      await sleep(4_000, options.signal)
+    }
     yield* streamText(
       DEMO
         ? "For this workflow I'd keep the order event on a queue and expose webhooks as subscriptions. That keeps retries and ordering under our control while still giving the partner a push endpoint."

@@ -30,7 +30,10 @@ Host
 ## Why the request prefix is preserved
 
 The fork provider seeds the child with the parent's completed turn prefix. Marginalia adds exactly
-one user-role message. It does **not**:
+one user-role message. The current open turn is not part of the seed, so `openTurnSnapshot()` reads
+the events after the last `turn/end` and adds a compact `<parent-in-progress>` block: current user
+request, latest assistant text, recent tool calls/results, and the active step. This is capped at 6k
+characters; it is snapshot data taken at ask time, not a live feed. It does **not**:
 
 - change the system prompt or add a system section;
 - pass `persona`, `agentPreset`, or `toolFilter`;
@@ -38,7 +41,9 @@ one user-role message. It does **not**:
 - rewrite inherited messages.
 
 `agentOptions.maxTokens` is `min(32k, parentMaxTokens)`. It changes the completion budget, not the
-prompt prefix.
+prompt prefix. The completed prefix can still hit the provider cache; the open-turn snapshot is new
+text and cannot be inside that prefix. Maximizing cache through the open turn would require reusing
+the parent's exact request and a direct LLM call, which would replace the child-session transport.
 
 This is why the read-only instruction cannot be a tool filter: removing tools would change the
 request and defeat the cache. The instruction is a user turn; the enforcement is a guard.
@@ -59,7 +64,7 @@ v1: the answer stays in the bubble and history.
 ask:
   validate → one-active-per-parent → reserve child id → guard
   persist running turn
-  build prompt (history + optional parent partial + open tools)
+  build prompt (history + open-turn snapshot + live partial)
   startActivation (resolves on acceptance)
   return { topic, turn } immediately
   background settle:

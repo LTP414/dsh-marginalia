@@ -120,6 +120,39 @@ describe('BtwEngine', () => {
     await store.close()
   })
 
+  it('injects the open first-turn task while the parent is running', async () => {
+    const { store } = await makeStore()
+    const { startChild, fake } = makeStarter()
+    const { engine } = engineFor(store, startChild)
+    const events = [
+      { type: 'turn/start', data: { turn: 1 } },
+      {
+        type: 'user/message',
+        data: { source: { kind: 'user' }, content: [{ type: 'text', text: 'Ship the release checklist' }] },
+      },
+      { type: 'step/start', data: { turn: 1, step: 1 } },
+      {
+        type: 'tool/call',
+        data: { callId: 'c1', name: 'bash', arguments: '{"command":"pnpm test"}' },
+      },
+    ]
+    const accepted = await engine.ask({
+      parent: parent({ session: { snapshotEvents: () => events } }),
+      turnId: TURN_A,
+      question: 'What is the current task?',
+      locale: 'en',
+    })
+    const prompt = fake.requests[0]?.prompt ?? ''
+    expect(prompt).toContain('<parent-in-progress>')
+    expect(prompt).toContain('Ship the release checklist')
+    expect(prompt).toContain('bash(command=pnpm test)')
+    expect(prompt).not.toContain('Old completed task')
+    fake.resolve({ stopReason: 'completed', output: [{ type: 'text', text: 'Shipping.' }] })
+    await waitFor(() => store.get('parent-1', accepted.topic.id)?.turns[0]?.status === 'complete')
+    await engine.dispose()
+    await store.close()
+  })
+
   it('injects topic history and current parent context into a follow-up', async () => {
     const { store } = await makeStore()
     const { startChild, fake } = makeStarter()
@@ -148,7 +181,8 @@ describe('BtwEngine', () => {
     expect(prompt).toContain('User: Why B?')
     expect(prompt).toContain('Assistant: Because it is cheaper.')
     expect(prompt).toContain('The main answer is still streaming')
-    expect(prompt).toContain('currently running: bash')
+    expect(prompt).toContain('Recent tool activity:')
+    expect(prompt).toContain('bash() → running')
     expect(second.topic.turns).toHaveLength(2)
     fake.resolve({ stopReason: 'completed', output: [{ type: 'text', text: 'Still B.' }] })
     await waitFor(() => store.get('parent-1', second.topic.id)?.turns[1]?.status === 'complete')

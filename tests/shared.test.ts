@@ -86,10 +86,11 @@ describe('prompt', () => {
     expect(prompt.trimEnd().endsWith('</btw>')).toBe(true)
   })
 
-  it('replays history, parent partial text, open tools, and a fenced quote', () => {
+  it('replays history, parent progress/partial text, open tools, and a fenced quote', () => {
     const prompt = buildPrompt({
       question: 'And now?',
       history: [turn()],
+      parentProgress: 'Current user request:\nShip the release checklist',
       parentPartial: 'The main answer is still being written',
       parentOpenTools: ['bash'],
       reference: 'const x = `a`',
@@ -98,6 +99,8 @@ describe('prompt', () => {
     expect(prompt).toContain('<btw-history>')
     expect(prompt).toContain('User: Why B?')
     expect(prompt).toContain('Assistant: Because B is cheaper.')
+    expect(prompt).toContain('Current user request:\nShip the release checklist')
+    expect(prompt).toContain('Live assistant partial:')
     expect(prompt).toContain('The main answer is still being written')
     expect(prompt).toContain('currently running: bash')
     expect(prompt).toContain('```')

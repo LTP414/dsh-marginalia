@@ -10,7 +10,7 @@ e2e/
   support/ui.ts       页面打开、composer、/btw、bubble、history 等 helper
   fixtures/dsh.ts     worker-scoped Playwright fixture
   fixtures/fake-llm/  确定性 LLM bundle（独立 package）
-  specs/btw.spec.ts          7 条核心浏览器 spec
+  specs/btw.spec.ts          8 条核心浏览器 spec
   specs/history-theme.spec.ts 深色主题历史面板回归（Chromium/Firefox dark）
   specs/screens.spec.ts       README 截图生成（仅 E2E_SCREENSHOTS=1 + screens project）
   specs/real.nightly.spec.ts 真实 provider，默认 skip
@@ -24,8 +24,8 @@ e2e/
 - **真实鉴权**：导航 Host 打印的 `?token=...` URL，换取 `dsh-auth-*` cookie；没有关闭鉴权，没有伪造 owner peer。
 - **真实 Host**：`dsh --profile e2e`，`dsh plugin add` 链接当前插件；workspace domain 预置。
 - **非安全 origin**：默认绑定第一个非 loopback IPv4（如 `10.10.0.2`），使 `crypto.randomUUID` 为 undefined；可用 `DSH_E2E_BIND_HOST` 覆盖。若只有 loopback，对应 spec 会 skip。
-- **浏览器矩阵**：`chromium` / `firefox` 跑 7 条核心 spec；`chromium-dark` / `firefox-dark` 只跑深色历史回归，Host 通过 `ui-theme.preference=dark` 启动。
-- **确定性模型**：`fixtures/fake-llm` 注册 `fake/fake-1`，逐 token 输出、`[slow]` 延迟、`[tool]` 强制 bash 工具调用、abort 终止。
+- **浏览器矩阵**：`chromium` / `firefox` 跑 8 条核心 spec；`chromium-dark` / `firefox-dark` 只跑深色历史回归，Host 通过 `ui-theme.preference=dark` 启动。
+- **确定性模型**：`fixtures/fake-llm` 注册 `fake/fake-1`，逐 token 输出、`[slow]` 延迟、`[tool]` 强制 bash 工具调用、`[hold]` 保持主回合运行、`[context]` 回显 open-turn 快照、abort 终止。
 - **等待策略**：Playwright web-first assertions / `expect.poll`；禁止用固定 sleep 作为主要等待。
 - **失败产物**：trace + screenshot 保留；video 关闭（需要匹配的 Playwright ffmpeg）。
 
@@ -44,7 +44,7 @@ npm run test:e2e:real     # DSH_E2E_REAL=1 + DEEPSEEK_API_KEY，nightly
 - `pnpm` 在 `PATH`（Host 的 plugin add 使用）
 - Playwright Chromium + Firefox；配置会自动探测 `~/.cache/ms-playwright` 或仓库 `.playwright-browsers`，否则 `npx playwright install chromium firefox`
 
-运行产物在 `.e2e-runs/`（已 gitignore）：`host-*/`、`host-*/host.log`、`artifacts/`。完整矩阵是 16 passed + 2 个 nightly skip（每个 light 项目各一个）。
+运行产物在 `.e2e-runs/`（已 gitignore）：`host-*/`、`host-*/host.log`、`artifacts/`。完整矩阵是 18 passed + 2 个 nightly skip（每个 light 项目各一个）。
 
 README 截图：`npm run screenshots`（`E2E_SCREENSHOTS=1` + `screens` project），写入 `docs/assets/screenshots/`。
 
