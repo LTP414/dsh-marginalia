@@ -1,10 +1,10 @@
-# AGENTS.md — dsh-marginalia
+# AGENTS.md — dsh-btw-marginalia
 
 本文件是仓库级入口。这里只介绍背景、项目定位和目录导航；具体代码、架构与修改约束见各子目录的 `AGENTS.md`。
 
 ## 背景
 
-`dsh-marginalia` 是 DeepSeek Harness（DSH）的 Host + Web Client 插件包，版本 `0.2.1`，Apache-2.0。
+`dsh-btw-marginalia` 是 DeepSeek Harness（DSH）的 Host + Web Client 插件包，版本 `0.2.2`，Apache-2.0。
 
 它实现 oh-my-pi 风格的 `/btw`：在主对话旁边问一个**只读**的侧问题，回答留在“页边”，不进入主 transcript。项目名取自 `marginalia`（页边注）。
 

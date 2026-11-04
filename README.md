@@ -2,7 +2,7 @@
   <a href="README.zh-CN.md"><img src="docs/assets/lang-zh.svg" alt="中文 README" height="28"></a>
 </p>
 
-# dsh-marginalia
+# dsh-btw-marginalia
 
 > Read-only side questions for DeepSeek Harness. Ask in the margin, keep the main thread clean.
 
@@ -58,15 +58,14 @@ isolated Host and a deterministic demo model, not by hand-editing the UI.
 ### Into a DSH profile
 
 ```bash
-dsh plugin --profile web add github:LTP414/dsh-marginalia
+dsh plugin --profile web add github:LTP414/dsh-btw-marginalia
 ```
 
 A git-hosted install builds the bundle once; DSH asks you to approve that build script
-(`allowBuilds`) before it runs. Once the npm release matches this checkout, the same command works
-with the prebuilt package and skips that step:
+(`allowBuilds`) before it runs. The published package installs prebuilt and skips that step:
 
 ```bash
-dsh plugin --profile web add dsh-marginalia
+dsh plugin --profile web add dsh-btw-marginalia
 ```
 
 ### From this checkout
@@ -83,7 +82,7 @@ a bundle composition:
 ```yaml
 - insert:
     - id: dsh-marginalia
-      name: dsh-marginalia
+      name: dsh-btw-marginalia
 ```
 
 The built package is self-contained: the Host half bundles its only runtime dependency (`zod`) and

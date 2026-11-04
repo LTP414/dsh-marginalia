@@ -2,7 +2,7 @@
   <a href="README.md"><img src="docs/assets/lang-en.svg" alt="English README" height="28"></a>
 </p>
 
-# dsh-marginalia · 边注
+# dsh-btw-marginalia · 边注
 
 > DeepSeek Harness 的只读旁问：在主对话页边提问，不弄脏主对话。
 
@@ -46,14 +46,14 @@
 ### 安装到 DSH Profile
 
 ```bash
-dsh plugin --profile web add github:LTP414/dsh-marginalia
+dsh plugin --profile web add github:LTP414/dsh-btw-marginalia
 ```
 
-从 Git 托管源安装时会在本地构建一次，DSH 会先请求你批准该包的构建脚本（`allowBuilds`）。等 npm
-上的版本与本仓库一致后，也可以用预构建包安装，跳过这一步：
+从 Git 托管源安装时会在本地构建一次，DSH 会先请求你批准该包的构建脚本（`allowBuilds`）。发布到 npm
+的包是预构建的，安装时跳过这一步：
 
 ```bash
-dsh plugin --profile web add dsh-marginalia
+dsh plugin --profile web add dsh-btw-marginalia
 ```
 
 ### 从当前 checkout 构建
@@ -69,7 +69,7 @@ npm run test:e2e       # Chromium + Firefox + 深色项目；18 passed，2 个 n
 ```yaml
 - insert:
     - id: dsh-marginalia
-      name: dsh-marginalia
+      name: dsh-btw-marginalia
 ```
 
 构建产物是自包含的：Host 打包了唯一的运行时依赖 `zod`，Client 打包了 Markdown 渲染器；React 和 Harness 包由宿主模块表提供。

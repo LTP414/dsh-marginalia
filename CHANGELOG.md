@@ -1,7 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.2.2 — 2026-11-04
 
+- Rename the repository and npm package to `dsh-btw-marginalia`. The Cordis row id stays
+  `dsh-marginalia` and the `marginalia` storage domain is unchanged, so existing profile entries
+  and saved side-question history keep working.
+- Add `assets/icon-512.png` for the awesome-dsh-plugin market card.
 - First-turn `/btw` now works while the main turn is still running. The Host reads the open turn's
   events and appends a compact `<parent-in-progress>` snapshot (current user request, recent tool
   calls/results, latest assistant text, and step) to the fork's single user prompt. The 6k-character

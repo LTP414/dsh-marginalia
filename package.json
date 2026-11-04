@@ -1,6 +1,6 @@
 {
-  "name": "dsh-marginalia",
-  "version": "0.2.1",
+  "name": "dsh-btw-marginalia",
+  "version": "0.2.2",
   "description": "Read-only side questions for DeepSeek Harness — ask in the margin, keep the main thread clean.",
   "keywords": [
     "dsh",
@@ -30,6 +30,7 @@
     "lib",
     "locale",
     "assets/icon.svg",
+    "assets/icon-512.png",
     "cordis.patch.yml",
     "README.md",
     "README.zh-CN.md",
@@ -77,11 +78,11 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/LTP414/dsh-marginalia.git"
+    "url": "git+https://github.com/LTP414/dsh-btw-marginalia.git"
   },
-  "homepage": "https://github.com/LTP414/dsh-marginalia#readme",
+  "homepage": "https://github.com/LTP414/dsh-btw-marginalia#readme",
   "bugs": {
-    "url": "https://github.com/LTP414/dsh-marginalia/issues"
+    "url": "https://github.com/LTP414/dsh-btw-marginalia/issues"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "4.0.5",

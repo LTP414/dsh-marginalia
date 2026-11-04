@@ -1,4 +1,4 @@
-# dsh-marginalia is a Host + Web Client bundle.
+# dsh-btw-marginalia is a Host + Web Client bundle.
 - insert:
     - id: dsh-marginalia
-      name: dsh-marginalia
+      name: dsh-btw-marginalia

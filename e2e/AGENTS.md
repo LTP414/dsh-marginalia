@@ -1,6 +1,6 @@
 # e2e/ — 真实浏览器验收
 
-本目录是 `dsh-marginalia` 的 Playwright 套件：**真实 Web GUI + 真实隔离 Host + 确定性 fake LLM**。它不是单元测试的替代，而是覆盖单测无法证明的部分：slash menu、Lexical composer、真实 fork、流式、刷新、工具 guard、非安全 origin。
+本目录是 `dsh-btw-marginalia` 的 Playwright 套件：**真实 Web GUI + 真实隔离 Host + 确定性 fake LLM**。它不是单元测试的替代，而是覆盖单测无法证明的部分：slash menu、Lexical composer、真实 fork、流式、刷新、工具 guard、非安全 origin。
 
 ## 目录
 

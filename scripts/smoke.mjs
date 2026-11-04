@@ -26,7 +26,7 @@ let client
 globalThis.window = {
   __ModuleLoader__: {
     load: ({ id, factory }) => {
-      assert.equal(id, 'dsh-marginalia', 'client module id')
+      assert.equal(id, 'dsh-btw-marginalia', 'client module id')
       client = factory(require)
     },
   },
