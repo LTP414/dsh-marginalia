@@ -1,5 +1,5 @@
 import { expect, test } from '../fixtures/dsh'
-import { askSide, bubbleAnswer, chatNodes, openApp, openHistory, seedMain, waitForBubbleStatus } from '../support/ui'
+import { askSide, bubbleAnswer, openApp, openHistory, seedMain, transcriptContentNodes, waitForBubbleStatus } from '../support/ui'
 
 /**
  * Regression for the DSH dark-theme history panel:
@@ -27,7 +27,7 @@ test('dark history keeps send labels visible and the follow-up pinned below scro
     await follow.press('Enter')
     await waitForBubbleStatus(page.getByTestId('marginalia-bubble').last(), 'complete')
   }
-  const before = await chatNodes(page).count()
+  const before = await transcriptContentNodes(page).count()
 
   const panel = await openHistory(page)
   const panelBackground = await panel.evaluate(el => getComputedStyle(el).backgroundColor)
@@ -69,5 +69,5 @@ test('dark history keeps send labels visible and the follow-up pinned below scro
     return Math.round(box?.y ?? -1)
   }).toBe(Math.round(followBox!.y))
   await expect(follow).toBeVisible()
-  expect(await chatNodes(page).count()).toBe(before)
+  expect(await transcriptContentNodes(page).count()).toBe(before)
 })

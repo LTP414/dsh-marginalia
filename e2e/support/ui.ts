@@ -15,6 +15,16 @@ export function chatNodes(page: Page): Locator {
   return page.locator('[data-chat-node-key]')
 }
 
+/**
+ * Durable user/assistant rows only. `turn-process` and `turn-tail` appear a
+ * frame later on a loaded CI worker, so comparing all Chat nodes is flaky and
+ * does not answer the product question: did the side question add a
+ * user/assistant message to the main transcript?
+ */
+export function transcriptContentNodes(page: Page): Locator {
+  return page.locator('[data-chat-node-key*=":input-message"], [data-chat-node-key*=":assistant"]')
+}
+
 export function latestBubble(page: Page): Locator {
   return page.getByTestId('marginalia-bubble').last()
 }
@@ -51,6 +61,9 @@ export async function seedMain(page: Page): Promise<void> {
   await input.fill('Seed the main conversation.')
   await input.press('Enter')
   await expect(chatFlow(page)).toContainText('Main answer accepted', { timeout: 15_000 })
+  // The tail/usage row arrives after the text; wait for the turn to settle so
+  // node-count baselines are stable on slow CI workers.
+  await expect(chatFlow(page)).toContainText('Usage', { timeout: 15_000 })
 }
 
 /**

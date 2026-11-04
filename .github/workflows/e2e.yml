@@ -1,9 +1,14 @@
 name: e2e
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
-  schedule:
-    - cron: '0 18 * * *'
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   browser:
@@ -18,7 +23,7 @@ jobs:
       - run: npm ci
       - name: Install DSH and pnpm
         run: npm install -g pnpm@11 @deepseek-ai/dsh@0.2.1-rc.2
-      - name: Install Chromium
+      - name: Install Chromium and Firefox
         run: npx playwright install --with-deps chromium firefox
       - name: Browser suite
         run: npm run test:e2e
@@ -31,3 +36,5 @@ jobs:
             .e2e-runs/artifacts
             .e2e-runs/host-*/host.log
           if-no-files-found: ignore
+          include-hidden-files: true
+          retention-days: 7

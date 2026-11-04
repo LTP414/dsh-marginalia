@@ -11,14 +11,15 @@
 
 ## `e2e.yml`
 
-触发：`workflow_dispatch`、每日 `0 18 * * *` UTC。
+触发：push 新 tag（`v*`）或 `workflow_dispatch`。同一 ref 的并发运行会取消旧任务。
 
 - `setup-node` Node 24 + npm cache。
 - `npm ci`。
 - 全局安装 `pnpm@11` 与 `@deepseek-ai/dsh@0.2.1-rc.2`（e2e fixture 的 `dsh`/`pnpm` 依赖）。
 - `npx playwright install --with-deps chromium firefox`。
 - `npm run test:e2e`（脚本先 build）。
-- 失败时上传 `.e2e-runs/artifacts` 和 `.e2e-runs/host-*/host.log`。
+- 失败时上传 `.e2e-runs/artifacts` 和 `.e2e-runs/host-*/host.log`；目录以点开头，必须 `include-hidden-files: true`，否则 GitHub 会报告 “No files were found”。
+- 只在 tag/手动运行：每日定时在代码与 DSH 版本都未变时没有新增信号，只会消耗 Runner 时间。
 
 ## 修改规则
 

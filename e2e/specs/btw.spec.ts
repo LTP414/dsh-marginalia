@@ -1,10 +1,11 @@
 import { expect, test } from '../fixtures/dsh'
+import type { Page } from '@playwright/test'
 import { rmSync, existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   askSide,
   bubbleAnswer,
-  chatNodes,
+  transcriptContentNodes,
   closeHistory,
   composer,
   openApp,
@@ -20,7 +21,7 @@ test.beforeEach(async ({ page, host }) => {
 
 test('shows /btw in the slash menu, streams, and leaves the main transcript untouched', async ({ page, host }) => {
   await seedMain(page)
-  const before = await chatNodes(page).count()
+  const before = await transcriptContentNodes(page).count()
 
   const bubble = await askSide(page, '[slow] Explain the margin')
   await expect(bubble).toHaveAttribute('data-status', 'running')
@@ -35,7 +36,7 @@ test('shows /btw in the slash menu, streams, and leaves the main transcript unto
   await waitForBubbleStatus(bubble, 'complete')
   await expect(answer).toContainText('This is a slow side answer')
   await expect.poll(() => archivedChild(host.home, '[slow] Explain the margin'), { timeout: 10_000 }).toBe(true)
-  expect(await chatNodes(page).count()).toBe(before)
+  expect(await transcriptContentNodes(page).count()).toBe(before)
   await expect(chatFlowText(page)).not.toContainText('[slow] Explain the margin')
 })
 
@@ -101,13 +102,13 @@ test('reload restores history and does not resend a running question', async ({ 
 test('read-only guard rejects a forced tool call and the file is untouched', async ({ page, host }) => {
   await seedMain(page)
   rmSync(host.toolPath, { force: true })
-  const before = await chatNodes(page).count()
+  const before = await transcriptContentNodes(page).count()
 
   const bubble = await askSide(page, '[tool] Please run the write')
   await waitForBubbleStatus(bubble, 'complete')
   await expect(bubbleAnswer(bubble)).toContainText('read-only guard blocked')
   expect(existsSync(host.toolPath)).toBe(false)
-  expect(await chatNodes(page).count()).toBe(before)
+  expect(await transcriptContentNodes(page).count()).toBe(before)
 })
 
 test('inserts an answer into the composer without sending it', async ({ page }) => {
@@ -115,10 +116,10 @@ test('inserts an answer into the composer without sending it', async ({ page }) 
   const bubble = await askSide(page, 'Insert this')
   await waitForBubbleStatus(bubble, 'complete')
   const answer = await bubbleAnswer(bubble).innerText()
-  const before = await chatNodes(page).count()
+  const before = await transcriptContentNodes(page).count()
   await bubble.getByTestId('marginalia-insert').click()
   await expect(composer(page)).toContainText(answer)
-  expect(await chatNodes(page).count()).toBe(before)
+  expect(await transcriptContentNodes(page).count()).toBe(before)
 })
 
 test('works on a plain-HTTP non-secure origin without crypto.randomUUID', async ({ page, host }) => {
@@ -131,7 +132,7 @@ test('works on a plain-HTTP non-secure origin without crypto.randomUUID', async 
   await expect(bubbleAnswer(bubble)).toContainText('Side answer: Why on HTTP?')
 })
 
-function chatFlowText(page: Parameters<typeof chatNodes>[0]) {
+function chatFlowText(page: Page) {
   return page.locator('[data-slot="conversation.chat.flow"]')
 }
 

@@ -58,7 +58,8 @@
   - 空白 session 的 aria-label 是 "Describe what you want to build..."，有历史后是 "Message or run a task..."。
   - 不要用 `.nth(1)` 或 Lexical class；follow-up 的 `textarea` 会抢“最后一个 textbox”。
 - `chatFlow(page)`：`[data-slot="conversation.chat.flow"]`
-- `chatNodes(page)`：`[data-chat-node-key]`，用于断言主记录节点数不变。
+- `chatNodes(page)`：全部 `[data-chat-node-key]`，用于调试/观察。
+- `transcriptContentNodes(page)`：只匹配 user/assistant 行；主记录“未新增消息”的断言必须用它，不能比较全部节点（`turn-process`/`turn-tail` 在慢 CI 上会晚一帧出现）。
 - `latestBubble(page)`：`getByTestId('marginalia-bubble').last()`。
 - `bubbleAnswer(bubble)`：`getByTestId('marginalia-answer')`。
 - `historyPanel(page)`：`getByTestId('marginalia-history')`。
@@ -67,7 +68,7 @@
 
 - `openApp(page, host)`：goto token URL + `resumeApp`。
 - `resumeApp(page)`：等 `#root`，若出现 Preview 的 `Continue` 就点，等 composer。reload 后使用它，不要重新走 token。
-- `seedMain(page)`：composer 输入固定 seed prompt，Enter，等主记录出现 `Main answer accepted`。依赖 fake LLM。
+- `seedMain(page)`：composer 输入固定 seed prompt，Enter，等主记录出现 `Main answer accepted` 和 `Usage`（turn 完成），依赖 fake LLM。这样节点计数基线在慢 CI 上稳定。
 - `askSide(page, question)`：
   1. composer `fill('/btw')`
   2. 等 `getByRole('option').filter({hasText:'btw'})`

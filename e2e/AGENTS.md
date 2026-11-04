@@ -68,4 +68,4 @@ README 截图：`npm run screenshots`（`E2E_SCREENSHOTS=1` + `screens` project�
 
 ## 与 CI
 
-`.github/workflows/e2e.yml` 在 `workflow_dispatch` 和每日 schedule 上运行；安装 DSH/pnpm/Chromium + Firefox 后执行 `npm run test:e2e`，失败上传 `.e2e-runs/artifacts` 和 host 日志。单元 CI 不跑浏览器套件。
+`.github/workflows/e2e.yml` 在 push 新 tag（`v*`）或手动 dispatch 时运行；安装 DSH/pnpm/Chromium + Firefox 后执行 `npm run test:e2e`，失败上传 `.e2e-runs/artifacts` 和 host 日志（`include-hidden-files: true`）。单元 CI 不跑浏览器套件，也不做每日定时。
